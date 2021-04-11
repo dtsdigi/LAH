@@ -1,0 +1,46 @@
+Sub testicle()
+
+Dim wsa As Worksheet
+Set wsa = ThisWorkbook.ActiveSheet
+
+Sheet2.Range("K2:Z100").ClearContents
+
+t = 2
+v = 2
+rv = Sheet2.Range("B" & Rows.Count).End(xlUp).Row
+
+
+For i = 1 To rv
+
+m = Sheet2.Cells(t, "B").Value
+h = Sheet2.Cells(t, "A").Value
+
+ms = ms + m
+hs = hs + h
+
+
+t = t + 1
+
+
+If ms < 50 Then
+
+Sheet2.Cells(t, "O").Value = ms
+Sheet2.Cells(v, "K").Value = ms
+
+Sheet2.Cells(t, "P").Value = hs
+Sheet2.Cells(v, "L").Value = hs
+
+Sheet2.Cells(t, "Q").Value = ms / hs
+Sheet2.Cells(v, "M").Value = ms / hs
+
+Else
+
+v = v + 1
+ms = 0
+hs = 0
+
+End If
+
+Next i
+
+End Sub
