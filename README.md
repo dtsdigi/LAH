@@ -1,2 +1,0 @@
-# LAH
-My Hub
