@@ -1,0 +1,80 @@
+Sub test()
+
+Dim wsa As Worksheet
+Set wsa = ThisWorkbook.ActiveSheet
+
+t = 2
+v = 1
+x = 2
+
+rv = wsa.Range("C" & Rows.Count).End(xlUp).Row
+
+wsa.Range("J2:AZ1000").ClearContents
+
+For i = 1 To rv
+
+m = wsa.Cells(t, "C").Value
+h = wsa.Cells(t, "A").Value
+ta = wsa.Cells(t, "G").Value
+w = wsa.Cells(t, "I").Value
+
+ms = ms + m
+hs = hs + h
+ts = ts + ta
+ws = ws + w
+
+v = v + 1
+
+If wsa.Range("D" & t).Value = "R" Then
+    wsa.Cells(t, "U").Value = m
+    wsa.Cells(t, "V").Value = h
+    wsa.Cells(t, "W").Value = m / h
+
+Else
+    wsa.Cells(t, "Y").Value = m
+    wsa.Cells(t, "Z").Value = h
+    wsa.Cells(t, "AA").Value = m / h
+
+End If
+
+rm = wsa.Cells(t, "U").Value
+rh = wsa.Cells(t, "V").Value
+sm = wsa.Cells(t, "Y").Value
+sh = wsa.Cells(t, "Z").Value
+
+rms = rms + rm
+rhs = rhs + rh
+sms = sms + sm
+shs = shs + sh
+
+If ms < 50 Then
+
+    wsa.Cells(v, "Q").Value = ms
+    wsa.Cells(v, "R").Value = hs
+    wsa.Cells(v, "S").Value = ms / hs
+    
+    wsa.Cells(x, "K").Value = ms
+    wsa.Cells(x, "L").Value = hs
+    wsa.Cells(x, "M").Value = ms / hs
+    
+    wsa.Cells(x, "AC").Value = ts / t
+    wsa.Cells(x, "AD").Value = ws / t
+
+Else
+
+    wsa.Cells(x, "N").Value = rms / rhs
+    wsa.Cells(x, "O").Value = sms / shs
+
+    x = x + 1
+    ms = 0
+    hs = 0
+    rms = 0
+    rhs = 0
+
+End If
+
+t = t + 1
+
+Next i
+
+End Sub
