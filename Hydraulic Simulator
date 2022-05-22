@@ -1,0 +1,1700 @@
+Private Sub CommandButton4_Click()
+Call CommandButton1_Click
+Unload Me
+End Sub
+
+Private Sub UserForm_Initialize()
+
+'Application.WindowState = xlMaximized
+'Me.Height = Application.Height
+'Me.Width = Application.Width
+
+Me.ComboBox1.AddItem "Type 1"
+Me.ComboBox1.AddItem "Type 2"
+Me.ComboBox1.AddItem "Type 3"
+Me.ComboBox1.AddItem "Type 4"
+
+
+' Hole data input
+TextBox13.Value = Sheets("D A T A").Range("E18").Value 'section hole size
+TextBox1.Value = Sheets("D A T A").Range("E24").Value 'hole depth
+TextBox14.Value = Sheets("D A T A").Range("E24").Value 'total depth
+TextBox11.Value = Sheets("D A T A").Range("E29").Value 'previous casing ID
+TextBox12.Value = Sheets("D A T A").Range("E32").Value 'previous casing depth
+
+' BHA details
+TextBox6.Value = Sheets("D A T A").Range("L18").Value 'dp od
+TextBox7.Value = Sheets("D A T A").Range("L21").Value 'dp id
+
+TextBox8.Value = Sheets("D A T A").Range("L29").Value 'dc id
+TextBox9.Value = Sheets("D A T A").Range("L32").Value 'dc od
+TextBox10.Value = Sheets("D A T A").Range("L35").Value 'dc length
+
+' Rheology
+TextBox2.Value = Sheets("D A T A").Range("S18").Value 'plastic viscosty
+TextBox3.Value = Sheets("D A T A").Range("S21").Value 'yield point
+TextBox4.Value = Sheets("D A T A").Range("S24").Value 'mud weight
+TextBox32.Value = Sheets("D A T A").Range("S27").Value 'yield stress
+
+TextBox5.Value = Sheets("D A T A").Range("S35").Value 'flow rate
+TextBox15.Value = Sheets("D A T A").Range("S38").Value 'gpm
+TextBox33.Value = Sheets("D A T A").Range("S41").Value 'no of nozzles
+
+End Sub
+
+
+Private Sub ComboBox1_Change()
+If ComboBox1.Value = "Type 1" Then
+TextBox29.Value = 2.5 * 10 ^ (-4)
+ElseIf ComboBox1.Value = "Type 2" Then
+TextBox29.Value = 9.6 * 10 ^ (-5)
+ElseIf ComboBox1.Value = "Type 3" Then
+TextBox29.Value = 5.3 * 10 ^ (-5)
+ElseIf ComboBox1.Value = "Type 4" Then
+TextBox29.Value = 4.2 * 10 ^ (-5)
+End If
+
+End Sub
+
+Private Sub CommandButton1_Click()
+
+''assigning variables to the textboxes
+
+A = Val(TextBox1.Value)
+b = Val(TextBox2.Value)
+c = Val(TextBox3.Value)
+d = Val(TextBox4.Value)
+e = Val(TextBox5.Value)
+F = Val(TextBox6.Value)
+g = Val(TextBox7.Value)
+h = Val(TextBox8.Value)
+i = Val(TextBox9.Value)
+j = Val(TextBox10.Value)
+k = Val(TextBox11.Value)
+l = Val(TextBox12.Value)
+m = Val(TextBox13.Value)
+n = Val(TextBox14.Value)
+o = Val(TextBox15.Value)
+bb = Val(TextBox33.Value)
+tn = Val(TextBox32.Value)
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'TFA
+Pi = Application.WorksheetFunction.Pi()
+'tfa = (Pi / 4) * (InputBox("Enter the Nozzle Size") / 32) ^ 2 * Sheet2.Range("s41").Value
+tfa = Sheet2.Range("E49").Value
+
+
+''Theta600 & Theta 300
+ts = 2 * b + c
+    TextBox27.Value = ts
+tt = b + c
+    TextBox28.Value = tt
+    
+na = 3.32 * Log(ts / tt) / Log(10)
+    TextBox25.Value = na
+ka = tt / ((511) ^ na)
+    TextBox26.Value = ka
+
+'Bingham Plastic model
+
+''P1
+w = Val(TextBox29.Value) * d ^ 0.8 * e ^ 1.8 * b ^ 0.2
+TextBox16.Value = w
+
+R1 = 5
+r11 = 18
+r111 = 31
+
+
+Sheet4.Range("A5:Z11").ClearContents
+Sheet4.Range("A18:L24").ClearContents
+Sheet4.Range("A31:L37").ClearContents
+
+' for flow rate -150
+    For Z = (Sheet2.Range("S35").Value - 150) To (Sheet2.Range("S35").Value) Step 50 'z=GPM
+        'Sheet4.Range("A" & Rows.Count).End(xlUp).Offset(1).Value = z
+            Sheet4.Range("A" & R1).Value = Z
+            Sheet4.Range("A" & r11).Value = Z
+            Sheet4.Range("A" & r111).Value = Z
+       
+    
+'P1: Bingham Plastic
+    w1 = Val(TextBox29.Value) * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 'P1
+        'Sheet4.Range("B" & Rows.Count).End(xlUp).Offset(1).Value = w 'P1 Output
+            Sheet4.Range("B" & R1).Value = w1
+            
+'P1: Power Law
+            Sheet4.Range("B" & r11).Value = w1
+
+'P1: Herschel Buckley
+            Sheet4.Range("B" & r111).Value = w1
+            
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''
+        
+'P2: Bingham Plastic
+    vadpb = (24.5 * Z) / (F ^ 2) 'P2 lamianr
+    
+    vcdpb = ((97 * b) + 97 * ((b ^ 2 + 8.2 * d * F ^ 2 * c) ^ 0.5)) / (d * F) 'P2 Turbulent
+    
+        If vadpb > vcdpb Then rr = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * (n - j)) / (F ^ 4.8)
+        If vadpb < vcdpb Then rr = (((n - j) * b * vadp) / (90000 * F ^ 2)) + (((n - j) * c) / (225 * F))
+        'Sheet4.Range("C" & Rows.Count).End(xlUp).Offset(1).Value = r
+            Sheet4.Range("C" & R1).Value = rr
+             
+             
+        
+'P2: Power Law
+    vadpp = (24.5 * Z) / (F ^ 2)
+    vcdpp = (((5.82 * 100000 * ka) / (d)) ^ (1 / (2 - na))) * (((1.6 * (3 * na + 1)) / (F * 4 * na)) ^ (na / (1 - na)))
+
+        If vadpp > vcdpp Then rrr = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * (n - j)) / (F ^ 4.8)
+        If vadpp < vcdpp Then rrr = ((ka * (n - j)) / (300 * F)) * ((1.6 * vadp * (3 * na + 1)) / (F * 4 * na)) ^ na
+            Sheet4.Range("C" & r11).Value = rrr
+
+'P2: Herschel Buckley
+
+    vp = (24.5 * Z) / (F ^ 2)
+    'cc = 1 - (((1 / (2 * na + 1) * tn)) / ((tn + ka * (((3 * na + 1) * Z)) / (na * 3.14 * (f / 2) ^ 3)) ^ na))
+
+cc1 = (tn + (ka * ((((3 * na) + 1) * Z) / (na * Pi * ((F / 2) ^ 3))) ^ na))
+cc2 = (1 / ((2 * na) + 1)) * tn
+ccx = 1 - (cc2 / cc1)
+
+    ''yy = ((Log(na) / Log(10) + 3.93) / 50)
+    yy = (Log(na) + 3.93) / 50
+ 
+    'zz = ((1.75 - (Log(na) / Log(10))) / 7)
+    zz = (1.75 - Log(na)) / 7
+
+    'nre = (((2 * (3 * na + 1)) / na) * ((d * vp ^ (2 - na)) * (f / 2) ^ na)) / ((tn * (f / 2 * vp) ^ na) + (ka * ((3 * na + 1) / (na * ccx)) ^ na))
+
+    nrex1 = (((3 * na) + 1) * 2) / na
+    nrex2 = ((vp ^ (2 - na)) * d) * ((F / 2) ^ na)
+    nrex3 = (((F / 2) * vp) ^ na) * tn
+    nrex4 = ka * ((((3 * na) + 1) / (na * ccx)) ^ na)
+    
+    nre = nrex1 * (nrex2 / (nrex3 + nrex4))
+
+     
+        fa = yy * ((ccx * nre) ^ -zz)
+        Nrec = ((4 * (3 * na + 1)) / (na * yy)) ^ (1 / (1 - zz))
+
+        If nre < Nrec Then rrrr = (4 * ka * (n - j) / (14400 * F)) * ((tn / ka) + (((3 * na + 1) / (na * ccx)) * ((8 * Z) / (3.14 * F ^ 3))) ^ na)
+        If nre > Nrec Then rrrr = (((fa * Z ^ 2 * d) / (1421.22 * F ^ 5)) * (n - j))
+            Sheet4.Range("C" & r111).Value = rrrr
+            
+            
+'''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+'P3: Bingham Plastic
+    vadc = (24.5 * Z) / (h ^ 2)
+    vcdc = ((97 * b) + 97 * ((b ^ 2 + 8.2 * d * h ^ 2 * c) ^ 0.5)) / (d * h)
+
+        If vadc > vcdc Then s1 = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * j) / (h ^ 4.8)
+        If vadc < vcdc Then s1 = ((j * b * vadc) / (90000 * h ^ 2)) + ((j * c) / (225 * h))
+        'Sheet4.Range("D" & Rows.Count).End(xlUp).Offset(1).Value = s
+            Sheet4.Range("D" & R1).Value = s1
+            
+'P3: Power Law
+    vadc = (24.5 * Z) / (h ^ 2)
+    vcdc = (((5.82 * 10 ^ 4 * ka) / (d)) ^ (1 / (2 - na))) * ((1.6 * (3 * na + 1)) / (h * 4 * na)) ^ (na / (1 - na))
+
+        If vadc > vcdc Then s11 = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * j) / (h ^ 4.8)
+        If vadc < vcdc Then s11 = ((ka * j) / (300 * h)) * ((1.6 * vadc * (3 * na + 1)) / (h * 4 * na)) ^ na
+            Sheet4.Range("D" & r11).Value = s11
+            
+'P3: Herschel Buckley
+    vc = (24.5 * Z) / (h ^ 2)
+    ccc = 1 - (((1 / (2 * na + 1) * tn)) / ((tn + ka * (((3 * na + 1) * Z)) / (na * 3.14 * (h / 2) ^ 3)) ^ na))
+    yy = ((Log(na) / Log(10) + 3.93) / 50)
+    zz = ((1.75 - (Log(na) / Log(10))) / 7)
+    Nredc = (((2 * (3 * na + 1)) / na) * ((d * vc ^ (2 - na)) * (h / 2) ^ na)) / ((tn * (h / 2 * vc) ^ na) + (ka * ((3 * na + 1) / (na * ccc)) ^ na))
+
+        fac = yy * (ccc * Nredc) ^ -zz
+        Nrecdc = ((4 * (3 * na + 1)) / (na * yy)) ^ (1 / (1 - zz))
+
+        If Nredc < Nrecdc Then s111 = (4 * ka * j) / (14400 * h) * ((tn / ka) + (((3 * na + 1) / (na * ccc)) * ((8 * Z) / (3.14 * h ^ 3))) ^ na)
+        If Nredc > Nrecdc Then s111 = (((fac * Z ^ 2 * d) / (1421.22 * h ^ 5)) * j)
+            Sheet4.Range("D" & r111).Value = s111
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'P4: Drillpipe & (X:casing + y:Open Hole)
+
+'P4: Bingham Plastic
+    vadpa = (24.5 * Z) / (k ^ 2 - g ^ 2)
+    vcdpa = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (k - g) ^ 2 * c) ^ 0.5)) / (d * (k - g))
+
+        If vadpa > vcdpa Then X = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * l) / ((k - g) ^ 3 * (k + g) ^ 1.8)
+        If vadpa < vcdpa Then X = ((l * b * vadpa) / (60000 * (k - g) ^ 2)) + ((l * c) / (225 * (k - g)))
+
+    vadpo = (24.5 * Z) / (m ^ 2 - g ^ 2)
+    vcdpo = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (m - g) ^ 2 * c) ^ 0.5)) / (d * (m - g))
+
+        If vadpo > vcdpo Then Y = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * (n - l - j)) / ((m - g) ^ 3 * (m + g) ^ 1.8)
+        If vadpo < vcdpo Then Y = (((n - l - j) * b * vadpo) / (60000 * (m - g) ^ 2)) + (((n - l - j) * c) / (225 * (m - g)))
+
+            u1 = X + Y
+    'Sheet4.Range("E" & Rows.Count).End(xlUp).Offset(1).Value = u
+                Sheet4.Range("E" & R1).Value = u1
+    
+'P4: Power Law
+    vadpa = (24.5 * Z) / (k ^ 2 - g ^ 2)
+    vcdpa = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((k - g) * 3 * na)) ^ (na / (1 - na))
+
+        If vadpa > vcdpa Then X = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * l) / ((k - g) ^ 3 * (k + g) ^ 1.8)
+        If vadpa < vcdpa Then X = ((ka * l) / (300 * (k - g))) * ((2.4 * vadpa * (2 * na + 1)) / ((k - g) * 3 * na)) ^ na
+
+    vadpo = (24.5 * Z) / (m ^ 2 - g ^ 2)
+    vcdco = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((m - g) * 3 * na)) ^ (na / (1 - na))
+
+        If vadpo > vcdpo Then Y = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * (n - l - j)) / ((m - g) ^ 3 * (m + g) ^ 1.8)
+        If vadpo < vcdpo Then Y = ((ka * (n - l - j)) / (300 * (m - g))) * ((2.4 * vadpo * (2 * na + 1)) / ((m - g) * 3 * na)) ^ na
+
+        u11 = X + Y
+            Sheet4.Range("E" & r11).Value = u11
+            
+'P4: Herschel Buckley
+    vacp = (24.5 * Z) / (k ^ 2 - g ^ 2)
+    cacp = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * Z * (2 * na + 1)) / (na * 3.14 * ((k / 2) - (g / 2)) * ((k / 2) ^ 2 - (g / 2) ^ 2))) ^ na)))
+    yy = ((Log(na) / Log(10) + 3.93) / 50)
+    zz = ((1.75 - (Log(na) / Log(10))) / 7)
+    Nrecp = ((4 * (2 * na + 1)) / na) * (((d * vacp ^ (2 - na)) * ((k - g) / 2) ^ na)) / (tn * ((k - g) / (2 * vacp)) ^ na + ka * (2 * (2 * na + 1) / (na * cacp)) ^ na)
+
+        facp = yy * (cacp * Nrecp) ^ -zz
+        Nrecpc = ((8 * (2 * na + 1)) / (na * yy)) ^ (1 / (1 - zz))
+
+        If Nrecp < Nrecpc Then X = ((4 * ka * l) / (14400 * (k - g))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * cacp * (k - g))) * (Z / (3.14 * (k ^ 2 - g ^ 2))) ^ na))
+        If Nrecp > Nrecpc Then X = ((facp * Z ^ 2 * d * l) / (1421.22 * (k - g) * (k ^ 2 - g ^ 2) ^ 2))
+
+    vaop = (24.5 * Z) / (m ^ 2 - g ^ 2)
+    caop = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * Z * (2 * na + 1)) / (na * 3.14 * ((m / 2) - (g / 2)) * ((m / 2) ^ 2 - (g / 2) ^ 2))) ^ na)))
+    yy = ((Log(na) / Log(10) + 3.93) / 50)
+    zz = ((1.75 - (Log(na) / Log(10))) / 7)
+    Nreop = ((4 * (2 * na + 1)) / na) * (((d * vaop ^ (2 - na)) * ((m - g) / 2) ^ na)) / (tn * ((m - g) / (2 * vaop)) ^ na + ka * (2 * (2 * na + 1) / (na * caop)) ^ na)
+
+        faop = yy * (caop * Nreop) ^ -zz
+        Nreopc = ((8 * (2 * na + 1)) / (na * yy)) ^ (1 / (1 - zz))
+
+        If Nreop < Nreopc Then Y = ((4 * ka * (n - l - j)) / (14400 * (m - g))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * caop * (m - g))) * (Z / (3.14 * (m ^ 2 - g ^ 2))) ^ na))
+        If Nreop > Nreopc Then Y = ((faop * Z ^ 2 * d * (n - l - j)) / (1421.22 * (m - g) * (m ^ 2 - g ^ 2) ^ 2))
+
+    u111 = X + Y
+        Sheet4.Range("E" & r111).Value = u111
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+'P5:openhole and drillcollar
+
+'P5: Bingham Plastic
+    vadca = (24.5 * Z) / (m ^ 2 - i ^ 2)
+    vcdca = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (m - i) ^ 2 * c) ^ 0.5)) / (d * (m - i))
+
+        If vadca > vcdca Then t1 = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * j) / ((m - i) ^ 3 * (m + i) ^ 1.8)
+        If vadca < vcdca Then t1 = ((j * b * vadca) / (60000 * (m - i) ^ 2)) + ((j * c) / (225 * (m - i)))
+    'Sheet4.Range("F" & Rows.Count).End(xlUp).Offset(1).Value = t
+            Sheet4.Range("F" & R1).Value = t1
+
+'P5: Power Law
+    vadca = (24.5 * Z) / (m ^ 2 - i ^ 2)
+    vcdca = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((m - i) * 3 * na)) ^ (na / (1 - na))
+
+        If vadca > vcdca Then t11 = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * j) / ((m - i) ^ 3 * (m + i) ^ 1.8)
+        If vadca < vcdca Then t11 = ((ka * j) / (300 * (m - i))) * ((2.4 * vadca * (2 * na + 1)) / ((m - i) * 3 * na)) ^ na
+            Sheet4.Range("F" & r11).Value = t11
+            
+'P5: Herschel Buckley
+    vaoc = (24.5 * Z) / (m ^ 2 - i ^ 2)
+    caoc = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * Z * (2 * na + 1)) / (na * 3.14 * ((m / 2) - (i / 2)) * ((m / 2) ^ 2 - (i / 2) ^ 2))) ^ na)))
+    yy = ((Log(na) / Log(10) + 3.93) / 50)
+    zz = ((1.75 - (Log(na) / Log(10))) / 7)
+    Nreoc = ((4 * (2 * na + 1)) / na) * (((d * vaoc ^ (2 - na)) * ((m - i) / 2) ^ na)) / (tn * ((m - i) / (2 * vaoc)) ^ na + ka * (2 * (2 * na + 1) / (na * caoc)) ^ na)
+
+        faoc = yy * (caoc * Nreoc) ^ -zz
+        Nreocc = ((8 * (2 * na + 1)) / (na * yy)) ^ (1 / (1 - zz))
+
+    If Nreoc < Nreocc Then t111 = ((4 * ka * j) / (14400 * (m - i))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * caop * (m - i))) * (Z / (3.14 * (m ^ 2 - i ^ 2))) ^ na))
+    If Nreoc > Nreocc Then t111 = ((faoc * Z ^ 2 * d * j) / (1421.22 * (m - i) * (m ^ 2 - i ^ 2) ^ 2))
+        Sheet4.Range("F" & r111).Value = t111
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+               
+'Pbit
+    'pbit = o - (w + r + s + u + t)
+    Pbit = ((Z) ^ 2 * Sheet2.Range("S24").Value) / (12032 * (0.98) ^ 2 * (tfa) ^ 2)
+    'Sheet4.Range("G" & Rows.Count).End(xlUp).Offset(1).Value = pbit
+    Sheet4.Range("G" & R1).Value = Pbit
+    Sheet4.Range("G" & r11).Value = Pbit
+    Sheet4.Range("G" & r111).Value = Pbit
+    
+'Standpipe Pressure Bingham Plastic
+    SPP1 = (w1 + rr + s1 + u1 + t1 + Pbit)
+    'Sheet4.Range("H" & Rows.Count).End(xlUp).Offset(1).Value = SPP
+        Sheet4.Range("H" & R1).Value = SPP1
+
+'Standpipe pressure Power Law
+    SPP11 = (w11 + rrr + s11 + u11 + t11 + Pbit)
+        Sheet4.Range("H" & r11).Value = SPP11
+
+'Standpipe pressure Herschel Buckley
+    SPP111 = (w111 + rrrr + s111 + u111 + t111 + Pbit)
+        Sheet4.Range("H" & r111).Value = SPP111
+        
+'Jet velocity: Bingham plastic
+    JV1 = (0.320086 * Z) / tfa
+        Sheet4.Range("I" & R1).Value = JV1
+'Jet velocity: Power Law
+        Sheet4.Range("I" & r11).Value = JV1
+'Jet velocity: Hershcel Buckley
+        Sheet4.Range("I" & r111).Value = JV1
+        
+'jet Impact: Bingham Plastic
+    JI1 = 0.000526 * Z * JV1 * d
+        Sheet4.Range("J" & R1).Value = JI1
+'Jet Impact: Power Law
+        Sheet4.Range("J" & r11).Value = JI1
+'Jet Impact: Herschel Buckley
+        Sheet4.Range("J" & r111).Value = JI1
+
+'Bit HHP: Bingham Plastic
+    BHHP1 = (Pbit * Z) / 1714
+        Sheet4.Range("k" & R1).Value = BHHP1
+'Bit HHP: Power Law
+        Sheet4.Range("k" & r11).Value = BHHP1
+'Bit HHP: Hershcel Buckley
+        Sheet4.Range("k" & r111).Value = BHHP1
+
+'HSI: Bingham Plastic
+    BHSI1 = BHHP1 / ((Pi / 4) * (m ^ 2))
+        Sheet4.Range("L" & R1).Value = BHSI1
+'HSI: Power law
+        Sheet4.Range("L" & r11).Value = BHSI1
+'HSI: Hershcel Buckley
+        Sheet4.Range("L" & r111).Value = BHSI1
+        
+        
+R1 = R1 + 1
+r11 = r11 + 1
+r111 = r111 + 1
+
+
+  Next Z
+
+R2 = 9
+r22 = 22
+r222 = 35
+
+
+' for flow rate +150
+    For Z = Sheet2.Range("S35").Value + 50 To Sheet2.Range("S35").Value + 150 Step 50
+        'Sheet4.Range("A" & Rows.Count).End(xlUp).Offset(1).Value = z
+        Sheet4.Range("A" & R2).Value = Z
+        Sheet4.Range("A" & r22).Value = Z
+        Sheet4.Range("A" & r222).Value = Z
+        
+'P1: Bingham Plastic
+    w2 = Val(TextBox29.Value) * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2
+        'Sheet4.Range("B" & Rows.Count).End(xlUp).Offset(1).Value = w
+        Sheet4.Range("B" & R2).Value = w2
+        
+'P1: Power Law
+        Sheet4.Range("B" & r22).Value = w2
+        
+'P1: Herschel Buckley
+            Sheet4.Range("B" & r222).Value = w2
+'''''''''''''''''''''''''''''''''''''''''''''''''''
+        
+'P2: Bingham Plastic
+    vadp = (24.5 * Z) / (F ^ 2)
+    vcdp = ((97 * b) + 97 * ((b ^ 2 + 8.2 * d * F ^ 2 * c) ^ 0.5)) / (d * F)
+ 
+        If vadp > vcdp Then R = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * (n - j)) / (F ^ 4.8)
+        If vadp < vcdp Then R = (((n - j) * b * vadp) / (90000 * F ^ 2)) + (((n - j) * c) / (225 * F))
+        'Sheet4.Range("C" & Rows.Count).End(xlUp).Offset(1).Value = r
+            Sheet4.Range("C" & R2).Value = R
+
+'P2: Power Law
+    vadp = (24.5 * Z) / (F ^ 2)
+    vcdp = (((5.82 * 10 ^ 4 * ka) / (d)) ^ (1 / (2 - na))) * (((1.6 * (3 * na + 1)) / (F * 4 * na)) ^ (na / (1 - na)))
+
+        If vadp > vcdp Then rr = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * (n - j)) / (F ^ 4.8)
+        If vadp < vcdp Then rr = ((ka * (n - j)) / (300 * F)) * ((1.6 * vadp * (3 * na + 1)) / (F * 4 * na)) ^ na
+            Sheet4.Range("C" & r22).Value = rr
+            
+'P2: Herschel Buckley
+    vp = (24.5 * Z) / (F ^ 2)
+    cc = 1 - (((1 / (2 * na + 1) * tn)) / ((tn + ka * (((3 * na + 1) * Z)) / (na * 3.14 * (F / 2) ^ 3)) ^ na))
+    yy = ((Log(na) / Log(10) + 3.93) / 50)
+    zz = ((1.75 - (Log(na) / Log(10))) / 7)
+    nre = (((2 * (3 * na + 1)) / na) * ((d * vp ^ (2 - na)) * (F / 2) ^ na)) / ((tn * (F / 2 * vp) ^ na) + (ka * ((3 * na + 1) / (na * cc)) ^ na))
+
+        fa = yy * (cc * nre) ^ -zz
+        Nrec = ((4 * (3 * na + 1)) / (na * yy)) ^ (1 / (1 - zz))
+
+        If nre < Nrec Then rrrr = (4 * ka * (n - j) / (14400 * F)) * ((tn / ka) + (((3 * na + 1) / (na * cc)) * ((8 * Z) / (3.14 * F ^ 3))) ^ na)
+        If nre > Nrec Then rrrr = (((fa * Z ^ 2 * d) / (1421.22 * F ^ 5)) * (n - j))
+            Sheet4.Range("C" & r222).Value = rrrr
+'''''''''''''''''''''''''''''''''''''''''''''''''''''
+                
+'P3: Bingham Plastic
+    vadc = (24.5 * Z) / (h ^ 2)
+    vcdc = ((97 * b) + 97 * ((b ^ 2 + 8.2 * d * h ^ 2 * c) ^ 0.5)) / (d * h)
+
+        If vadc > vcdc Then s2 = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * j) / (h ^ 4.8)
+        If vadc < vcdc Then s2 = ((j * b * vadc) / (90000 * h ^ 2)) + ((j * c) / (225 * h))
+        'Sheet4.Range("D" & Rows.Count).End(xlUp).Offset(1).Value = s
+            Sheet4.Range("D" & R2).Value = s2
+
+'P3: Power Law
+    vadc = (24.5 * Z) / (h ^ 2)
+    vcdc = (((5.82 * 10 ^ 4 * ka) / (d)) ^ (1 / (2 - na))) * ((1.6 * (3 * na + 1)) / (h * 4 * na)) ^ (na / (1 - na))
+
+        If vadc > vcdc Then s22 = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * j) / (h ^ 4.8)
+        If vadc < vcdc Then s22 = ((ka * j) / (300 * h)) * ((1.6 * vadc * (3 * na + 1)) / (h * 4 * na)) ^ na
+            Sheet4.Range("D" & r22).Value = s22
+            
+'P3: Herschel Buckley
+    vc = (24.5 * Z) / (h ^ 2)
+    ccc = 1 - (((1 / (2 * na + 1) * tn)) / ((tn + ka * (((3 * na + 1) * Z)) / (na * 3.14 * (h / 2) ^ 3)) ^ na))
+    yy = ((Log(na) / Log(10) + 3.93) / 50)
+    zz = ((1.75 - (Log(na) / Log(10))) / 7)
+    Nredc = (((2 * (3 * na + 1)) / na) * ((d * vc ^ (2 - na)) * (h / 2) ^ na)) / ((tn * (h / 2 * vc) ^ na) + (ka * ((3 * na + 1) / (na * ccc)) ^ na))
+
+        fac = yy * (ccc * Nredc) ^ -zz
+        Nrecdc = ((4 * (3 * na + 1)) / (na * yy)) ^ (1 / (1 - zz))
+
+        If Nredc < Nrecdc Then s222 = (4 * ka * j) / (14400 * h) * ((tn / ka) + (((3 * na + 1) / (na * ccc)) * ((8 * Z) / (3.14 * h ^ 3))) ^ na)
+        If Nredc > Nrecdc Then s222 = (((fac * Z ^ 2 * d) / (1421.22 * h ^ 5)) * j)
+            Sheet4.Range("D" & r222).Value = s222
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+        
+'P4: Bingham Plastic
+    vadpa = (24.5 * Z) / (k ^ 2 - g ^ 2)
+    vcdpa = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (k - g) ^ 2 * c) ^ 0.5)) / (d * (k - g))
+
+        If vadpa > vcdpa Then X = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * l) / ((k - g) ^ 3 * (k + g) ^ 1.8)
+        If vadpa < vcdpa Then X = ((l * b * vadpa) / (60000 * (k - g) ^ 2)) + ((l * c) / (225 * (k - g)))
+
+    vadpo = (24.5 * Z) / (m ^ 2 - g ^ 2)
+    vcdpo = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (m - g) ^ 2 * c) ^ 0.5)) / (d * (m - g))
+
+        If vadpo > vcdpo Then Y = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * (n - l - j)) / ((m - g) ^ 3 * (m + g) ^ 1.8)
+        If vadpo < vcdpo Then Y = (((n - l - j) * b * vadpo) / (60000 * (m - g) ^ 2)) + (((n - l - j) * c) / (225 * (m - g)))
+
+            u2 = X + Y
+    'Sheet4.Range("E" & Rows.Count).End(xlUp).Offset(1).Value = u
+                Sheet4.Range("E" & R2).Value = u2
+                
+'P4: Power Law
+    vadpa = (24.5 * Z) / (k ^ 2 - g ^ 2)
+    vcdpa = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((k - g) * 3 * na)) ^ (na / (1 - na))
+
+        If vadpa > vcdpa Then X = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * l) / ((k - g) ^ 3 * (k + g) ^ 1.8)
+        If vadpa < vcdpa Then X = ((ka * l) / (300 * (k - g))) * ((2.4 * vadpa * (2 * na + 1)) / ((k - g) * 3 * na)) ^ na
+
+    vadpo = (24.5 * Z) / (m ^ 2 - g ^ 2)
+    vcdco = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((m - g) * 3 * na)) ^ (na / (1 - na))
+
+        If vadpo > vcdpo Then Y = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * (n - l - j)) / ((m - g) ^ 3 * (m + g) ^ 1.8)
+        If vadpo < vcdpo Then Y = ((ka * (n - l - j)) / (300 * (m - g))) * ((2.4 * vadpo * (2 * na + 1)) / ((m - g) * 3 * na)) ^ na
+
+        u22 = X + Y
+            Sheet4.Range("E" & r22).Value = u22
+            
+'P4: Herschel Buckley
+    vacp = (24.5 * Z) / (k ^ 2 - g ^ 2)
+    cacp = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * Z * (2 * na + 1)) / (na * 3.14 * ((k / 2) - (g / 2)) * ((k / 2) ^ 2 - (g / 2) ^ 2))) ^ na)))
+    yy = ((Log(na) / Log(10) + 3.93) / 50)
+    zz = ((1.75 - (Log(na) / Log(10))) / 7)
+    Nrecp = ((4 * (2 * na + 1)) / na) * (((d * vacp ^ (2 - na)) * ((k - g) / 2) ^ na)) / (tn * ((k - g) / (2 * vacp)) ^ na + ka * (2 * (2 * na + 1) / (na * cacp)) ^ na)
+
+        facp = yy * (cacp * Nrecp) ^ -zz
+        Nrecpc = ((8 * (2 * na + 1)) / (na * yy)) ^ (1 / (1 - zz))
+
+        If Nrecp < Nrecpc Then X = ((4 * ka * l) / (14400 * (k - g))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * cacp * (k - g))) * (Z / (3.14 * (k ^ 2 - g ^ 2))) ^ na))
+        If Nrecp > Nrecpc Then X = ((facp * Z ^ 2 * d * l) / (1421.22 * (k - g) * (k ^ 2 - g ^ 2) ^ 2))
+
+    vaop = (24.5 * Z) / (m ^ 2 - g ^ 2)
+    caop = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * Z * (2 * na + 1)) / (na * 3.14 * ((m / 2) - (g / 2)) * ((m / 2) ^ 2 - (g / 2) ^ 2))) ^ na)))
+    yy = ((Log(na) / Log(10) + 3.93) / 50)
+    zz = ((1.75 - (Log(na) / Log(10))) / 7)
+    Nreop = ((4 * (2 * na + 1)) / na) * (((d * vaop ^ (2 - na)) * ((m - g) / 2) ^ na)) / (tn * ((m - g) / (2 * vaop)) ^ na + ka * (2 * (2 * na + 1) / (na * caop)) ^ na)
+
+        faop = yy * (caop * Nreop) ^ -zz
+        Nreopc = ((8 * (2 * na + 1)) / (na * yy)) ^ (1 / (1 - zz))
+
+        If Nreop < Nreopc Then Y = ((4 * ka * (n - l - j)) / (14400 * (m - g))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * caop * (m - g))) * (Z / (3.14 * (m ^ 2 - g ^ 2))) ^ na))
+        If Nreop > Nreopc Then Y = ((faop * Z ^ 2 * d * (n - l - j)) / (1421.22 * (m - g) * (m ^ 2 - g ^ 2) ^ 2))
+
+    u222 = X + Y
+        Sheet4.Range("E" & r222).Value = u222
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+    
+'P5: Bingham Plastic
+    vadca = (24.5 * Z) / (m ^ 2 - i ^ 2)
+    vcdca = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (m - i) ^ 2 * c) ^ 0.5)) / (d * (m - i))
+
+        If vadca > vcdca Then t2 = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * j) / ((m - i) ^ 3 * (m + i) ^ 1.8)
+        If vadca < vcdca Then t2 = ((j * b * vadca) / (60000 * (m - i) ^ 2)) + ((j * c) / (225 * (m - i)))
+    'Sheet4.Range("F" & Rows.Count).End(xlUp).Offset(1).Value = t
+            Sheet4.Range("F" & R2).Value = t2
+    
+'P5: Power Law
+    vadca = (24.5 * Z) / (m ^ 2 - i ^ 2)
+    vcdca = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((m - i) * 3 * na)) ^ (na / (1 - na))
+
+        If vadca > vcdca Then t22 = (8.91 * 10 ^ -5 * d ^ 0.8 * Z ^ 1.8 * b ^ 0.2 * j) / ((m - i) ^ 3 * (m + i) ^ 1.8)
+        If vadca < vcdca Then t22 = ((ka * j) / (300 * (m - i))) * ((2.4 * vadca * (2 * na + 1)) / ((m - i) * 3 * na)) ^ na
+            Sheet4.Range("F" & r22).Value = t22
+            
+'P5: Herschel Buckley
+    vaoc = (24.5 * Z) / (m ^ 2 - i ^ 2)
+    caoc = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * Z * (2 * na + 1)) / (na * 3.14 * ((m / 2) - (i / 2)) * ((m / 2) ^ 2 - (i / 2) ^ 2))) ^ na)))
+    yy = ((Log(na) / Log(10) + 3.93) / 50)
+    zz = ((1.75 - (Log(na) / Log(10))) / 7)
+    Nreoc = ((4 * (2 * na + 1)) / na) * (((d * vaoc ^ (2 - na)) * ((m - i) / 2) ^ na)) / (tn * ((m - i) / (2 * vaoc)) ^ na + ka * (2 * (2 * na + 1) / (na * caoc)) ^ na)
+
+        faoc = yy * (caoc * Nreoc) ^ -zz
+        Nreocc = ((8 * (2 * na + 1)) / (na * yy)) ^ (1 / (1 - zz))
+
+    If Nreoc < Nreocc Then t222 = ((4 * ka * j) / (14400 * (m - i))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * caop * (m - i))) * (Z / (3.14 * (m ^ 2 - i ^ 2))) ^ na))
+    If Nreoc > Nreocc Then t222 = ((faoc * Z ^ 2 * d * j) / (1421.22 * (m - i) * (m ^ 2 - i ^ 2) ^ 2))
+        Sheet4.Range("F" & r222).Value = t222
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+        
+'Pbit
+    'pbit = o - (w + r + s + u + t)
+    Pbit = ((Z) ^ 2 * Sheet2.Range("S24").Value) / (12032 * (0.98) ^ 2 * (tfa) ^ 2)
+    'Sheet4.Range("G" & Rows.Count).End(xlUp).Offset(1).Value = pbit
+    Sheet4.Range("G" & R2).Value = Pbit
+    Sheet4.Range("G" & r22).Value = Pbit
+    Sheet4.Range("G" & r222).Value = Pbit
+    
+    
+'Standpipe Pressure: Bingham Plastic
+    SPP2 = (w2 + R + s2 + u2 + t2 + Pbit)
+    'Sheet4.Range("H" & Rows.Count).End(xlUp).Offset(1).Value = SPP
+        Sheet4.Range("H" & R2).Value = SPP2
+'Standpipe Pressure: Power Law
+    SPP22 = (w22 + rr + s22 + u22 + t22 + Pbit)
+        Sheet4.Range("H" & r22).Value = SPP22
+'Standpipe pressure Herschel Buckley
+    SPP222 = (w222 + rrrr + s222 + u22 + t222 + Pbit)
+        Sheet4.Range("H" & r222).Value = SPP222
+        
+        
+'Jet velocity: Bingham plastic
+    JV2 = (0.320086 * Z) / tfa
+        Sheet4.Range("I" & R2).Value = JV2
+'Jet velocity: Power Law
+        Sheet4.Range("I" & r22).Value = JV2
+'Jet velocity: Hershcel Buckley
+        Sheet4.Range("I" & r222).Value = JV2
+        
+'jet Impact: Bingham Plastic
+    JI2 = 0.000526 * Z * JV2 * d
+        Sheet4.Range("J" & R2).Value = JI2
+'Jet Impact: Power Law
+        Sheet4.Range("J" & r22).Value = JI2
+'Jet Impact: Herschel Buckley
+        Sheet4.Range("J" & r222).Value = JI2
+        
+'Bit HHP: Bingham Plastic
+    BHHP2 = (Pbit * Z) / 1714
+        Sheet4.Range("k" & R2).Value = BHHP2
+'Bit HHP: Power Law
+        Sheet4.Range("k" & r22).Value = BHHP2
+'Bit HHP: Hershcel Buckley
+        Sheet4.Range("k" & r222).Value = BHHP2
+        
+'HSI: Bingham Plastic
+    BHSI2 = BHHP2 / ((Pi / 4) * (m ^ 2))
+        Sheet4.Range("L" & R2).Value = BHSI2
+'HSI: Power law
+        Sheet4.Range("L" & r22).Value = BHSI2
+'HSI: Hershcel Buckley
+        Sheet4.Range("L" & r222).Value = BHSI2
+        
+R2 = R2 + 1
+r22 = r22 + 1
+r222 = r222 + 1
+
+  Next Z
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''P2
+vadp = (24.5 * e) / (F ^ 2)
+vcdp = ((97 * b) + 97 * ((b ^ 2 + 8.2 * d * F ^ 2 * c) ^ 0.5)) / (d * F)
+ 
+If vadp > vcdp Then R = (8.91 * 10 ^ -5 * d ^ 0.8 * e ^ 1.8 * b ^ 0.2 * (n - j)) / (F ^ 4.8)
+If vadp < vcdp Then R = (((n - j) * b * vadp) / (90000 * F ^ 2)) + (((n - j) * c) / (225 * F))
+
+TextBox17.Value = R
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''P3
+vadc = (24.5 * e) / (h ^ 2)
+vcdc = ((97 * b) + 97 * ((b ^ 2 + 8.2 * d * h ^ 2 * c) ^ 0.5)) / (d * h)
+
+If vadc > vcdc Then s = (8.91 * 10 ^ -5 * d ^ 0.8 * e ^ 1.8 * b ^ 0.2 * j) / (h ^ 4.8)
+If vadc < vcdc Then s = ((j * b * vadc) / (90000 * h ^ 2)) + ((j * c) / (225 * h))
+
+TextBox18.Value = s
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''P4
+vadpa = (24.5 * e) / (k ^ 2 - g ^ 2)
+vcdpa = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (k - g) ^ 2 * c) ^ 0.5)) / (d * (k - g))
+
+If vadpa > vcdpa Then X = (8.91 * 10 ^ -5 * d ^ 0.8 * e ^ 1.8 * b ^ 0.2 * l) / ((k - g) ^ 3 * (k + g) ^ 1.8)
+If vadpa < vcdpa Then X = ((l * b * vadpa) / (60000 * (k - g) ^ 2)) + ((l * c) / (225 * (k - g)))
+
+vadpo = (24.5 * e) / (m ^ 2 - g ^ 2)
+vcdpo = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (m - g) ^ 2 * c) ^ 0.5)) / (d * (m - g))
+
+If vadpo > vcdpo Then Y = (8.91 * 10 ^ -5 * d ^ 0.8 * e ^ 1.8 * b ^ 0.2 * (n - l - j)) / ((m - g) ^ 3 * (m + g) ^ 1.8)
+If vadpo < vcdpo Then Y = (((n - l - j) * b * vadpo) / (60000 * (m - g) ^ 2)) + (((n - l - j) * c) / (225 * (m - g)))
+
+U = X + Y
+TextBox19.Value = U
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''P5
+vadca = (24.5 * e) / (m ^ 2 - i ^ 2)
+vcdca = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (m - i) ^ 2 * c) ^ 0.5)) / (d * (m - i))
+
+If vadca > vcdca Then t = (8.91 * 10 ^ -5 * d ^ 0.8 * e ^ 1.8 * b ^ 0.2 * j) / ((m - i) ^ 3 * (m + i) ^ 1.8)
+If vadca < vcdca Then t = ((j * b * vadca) / (60000 * (m - i) ^ 2)) + ((j * c) / (225 * (m - i)))
+
+TextBox20.Value = t
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Pbit
+TextBox21.Value = o - (Val(TextBox20.Value) + Val(TextBox19.Value) + Val(TextBox18.Value) + Val(TextBox17.Value) + Val(TextBox16.Value))
+Sheet12.Range("J77").Value = TextBox21.Value
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Nozzle Velocity
+If TextBox21.Value < 0 Then
+MsgBox "Pump Pressure too low ", vbExclamation, "Error"
+Unload UserForm1
+Sheet2.Range("S38").Select
+Exit Sub
+Else
+TextBox22.Value = 33.36 * ((Val(TextBox21.Value) / d) ^ 0.5)
+End If
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Total Nozzle Area
+TextBox23.Value = 0.32 * (e / Val(TextBox22.Value))
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Nozzle Size
+TextBox24.Value = 32 * (((4 * Val(TextBox23.Value)) / (bb * 3.14)) ^ 0.5)
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Jet Impact Force
+TextBox30.Value = (e * d * Val(TextBox24.Value)) / 1930
+Sheet12.Range("MJ79").Value = TextBox30.Value
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''HSI
+TextBox31.Value = (Val(TextBox21.Value) * e) / (1714 * 3.14 * (m ^ 2))
+Sheet12.Range("j81").Value = TextBox31.Value
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Standpipe Pressure
+TextBox34.Value = (Val(TextBox16.Value) + Val(TextBox17.Value) + Val(TextBox18.Value) + Val(TextBox19.Value) + Val(TextBox20.Value) + Val(TextBox21.Value))
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Flow rate -100 GPM
+P = e - 100
+
+
+wp = Val(TextBox29.Value) * d ^ 0.8 * P ^ 1.8 * b ^ 0.2
+
+
+pvadp = (24.5 * P) / (F ^ 2)
+pvcdp = ((97 * b) + 97 * ((b ^ 2 + 8.2 * d * F ^ 2 * c) ^ 0.5)) / (d * F)
+ 
+If pvadp > pvcdp Then rp = (8.91 * 10 ^ -5 * d ^ 0.8 * P ^ 1.8 * b ^ 0.2 * (n - j)) / (F ^ 4.8)
+If pvadp < pvcdp Then rp = (((n - j) * b * pvadp) / (90000 * F ^ 2)) + (((n - j) * c) / (225 * F))
+
+
+pvadc = (24.5 * P) / (h ^ 2)
+pvcdc = ((97 * b) + 97 * ((b ^ 2 + 8.2 * d * h ^ 2 * c) ^ 0.5)) / (d * h)
+
+If pvadc > pvcdc Then sp = (8.91 * 10 ^ -5 * d ^ 0.8 * P ^ 1.8 * b ^ 0.2 * j) / (h ^ 4.8)
+If pvadc < pvcdc Then sp = ((j * b * pvadc) / (90000 * h ^ 2)) + ((j * c) / (225 * h))
+
+
+pvadpa = (24.5 * P) / (k ^ 2 - g ^ 2)
+pvcdpa = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (k - g) ^ 2 * c) ^ 0.5)) / (d * (k - g))
+
+If pvadpa > pvcdpa Then xp = (8.91 * 10 ^ -5 * d ^ 0.8 * P ^ 1.8 * b ^ 0.2 * l) / ((k - g) ^ 3 * (k + g) ^ 1.8)
+If pvadpa < pvcdpa Then xp = ((l * b * pvadpa) / (60000 * (k - g) ^ 2)) + ((l * c) / (225 * (k - g)))
+
+pvadpo = (24.5 * P) / (m ^ 2 - g ^ 2)
+pvcdpo = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (m - g) ^ 2 * c) ^ 0.5)) / (d * (m - g))
+
+If pvadpo > pvcdpo Then yp = (8.91 * 10 ^ -5 * d ^ 0.8 * P ^ 1.8 * b ^ 0.2 * (n - l - j)) / ((m - g) ^ 3 * (m + g) ^ 1.8)
+If pvadpo < pvcdpo Then yp = (((n - l - j) * b * pvadpo) / (60000 * (m - g) ^ 2)) + (((n - l - j) * c) / (225 * (m - g)))
+
+up = xp + yp
+
+
+pvadca = (24.5 * P) / (m ^ 2 - i ^ 2)
+pvcdca = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (m - i) ^ 2 * c) ^ 0.5)) / (d * (m - i))
+
+If pvadca > pvcdca Then tp = (8.91 * 10 ^ -5 * d ^ 0.8 * P ^ 1.8 * b ^ 0.2 * j) / ((m - i) ^ 3 * (m + i) ^ 1.8)
+If pvadca < pvcdca Then tp = ((j * b * pvadca) / (60000 * (m - i) ^ 2)) + ((j * c) / (225 * (m - i)))
+
+pp = rp + sp + up + tp + wp
+phsi = (pp * P) / (1714 * 3.14 * (m ^ 2))
+
+
+
+''Flow rate -50 GPM
+q = e - 50
+
+
+wq = Val(TextBox29.Value) * d ^ 0.8 * q ^ 1.8 * b ^ 0.2
+
+
+qvadp = (24.5 * q) / (F ^ 2)
+qvcdp = ((97 * b) + 97 * ((b ^ 2 + 8.2 * d * F ^ 2 * c) ^ 0.5)) / (d * F)
+ 
+If qvadp > qvcdp Then rq = (8.91 * 10 ^ -5 * d ^ 0.8 * q ^ 1.8 * b ^ 0.2 * (n - j)) / (F ^ 4.8)
+If qvadp < qvcdp Then rq = (((n - j) * b * qvadp) / (90000 * F ^ 2)) + (((n - j) * c) / (225 * F))
+
+
+qvadc = (24.5 * q) / (h ^ 2)
+qvcdc = ((97 * b) + 97 * ((b ^ 2 + 8.2 * d * h ^ 2 * c) ^ 0.5)) / (d * h)
+
+If qvadc > qvcdc Then sq = (8.91 * 10 ^ -5 * d ^ 0.8 * q ^ 1.8 * b ^ 0.2 * j) / (h ^ 4.8)
+If qvadc < qvcdc Then sq = ((j * b * qvadc) / (90000 * h ^ 2)) + ((j * c) / (225 * h))
+
+
+qvadpa = (24.5 * q) / (k ^ 2 - g ^ 2)
+qvcdpa = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (k - g) ^ 2 * c) ^ 0.5)) / (d * (k - g))
+
+If qvadpa > qvcdpa Then xq = (8.91 * 10 ^ -5 * d ^ 0.8 * q ^ 1.8 * b ^ 0.2 * l) / ((k - g) ^ 3 * (k + g) ^ 1.8)
+If qvadpa < qvcdpa Then xq = ((l * b * qvadpa) / (60000 * (k - g) ^ 2)) + ((l * c) / (225 * (k - g)))
+
+qvadpo = (24.5 * q) / (m ^ 2 - g ^ 2)
+qvcdpo = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (m - g) ^ 2 * c) ^ 0.5)) / (d * (m - g))
+
+If qvadpo > qvcdpo Then yq = (8.91 * 10 ^ -5 * d ^ 0.8 * q ^ 1.8 * b ^ 0.2 * (n - l - j)) / ((m - g) ^ 3 * (m + g) ^ 1.8)
+If qvadpo < qvcdpo Then yq = (((n - l - j) * b * qvadpo) / (60000 * (m - g) ^ 2)) + (((n - l - j) * c) / (225 * (m - g)))
+
+uq = xq + yq
+
+
+qvadca = (24.5 * q) / (m ^ 2 - i ^ 2)
+qvcdca = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (m - i) ^ 2 * c) ^ 0.5)) / (d * (m - i))
+
+If qvadca > qvcdca Then tq = (8.91 * 10 ^ -5 * d ^ 0.8 * q ^ 1.8 * b ^ 0.2 * j) / ((m - i) ^ 3 * (m + i) ^ 1.8)
+If qvadca < qvcdca Then tq = ((j * b * qvadca) / (60000 * (m - i) ^ 2)) + ((j * c) / (225 * (m - i)))
+
+qq = rq + sq + uq + tq + wq
+qhsi = (qq * q) / (1714 * 3.14 * (m ^ 2))
+
+
+''Flow rate +50 GPM
+v = e + 50
+
+
+wv = Val(TextBox29.Value) * d ^ 0.8 * v ^ 1.8 * b ^ 0.2
+
+
+vvadp = (24.5 * v) / (F ^ 2)
+vvcdp = ((97 * b) + 97 * ((b ^ 2 + 8.2 * d * F ^ 2 * c) ^ 0.5)) / (d * F)
+ 
+If vvadp > vvcdp Then rv = (8.91 * 10 ^ -5 * d ^ 0.8 * v ^ 1.8 * b ^ 0.2 * (n - j)) / (F ^ 4.8)
+If vvadp < vvcdp Then rv = (((n - j) * b * vvadp) / (90000 * F ^ 2)) + (((n - j) * c) / (225 * F))
+
+
+vvadc = (24.5 * v) / (h ^ 2)
+vvcdc = ((97 * b) + 97 * ((b ^ 2 + 8.2 * d * h ^ 2 * c) ^ 0.5)) / (d * h)
+
+If vvadc > vvcdc Then sp = (8.91 * 10 ^ -5 * d ^ 0.8 * v ^ 1.8 * b ^ 0.2 * j) / (h ^ 4.8)
+If vvadc < vvcdc Then sp = ((j * b * vvadc) / (90000 * h ^ 2)) + ((j * c) / (225 * h))
+
+
+vvadpa = (24.5 * v) / (k ^ 2 - g ^ 2)
+vvcdpa = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (k - g) ^ 2 * c) ^ 0.5)) / (d * (k - g))
+
+If vvadpa > vvcdpa Then xv = (8.91 * 10 ^ -5 * d ^ 0.8 * v ^ 1.8 * b ^ 0.2 * l) / ((k - g) ^ 3 * (k + g) ^ 1.8)
+If vvadpa < vvcdpa Then xv = ((l * b * vvadpa) / (60000 * (k - g) ^ 2)) + ((l * c) / (225 * (k - g)))
+
+vvadpo = (24.5 * v) / (m ^ 2 - g ^ 2)
+vvcdpo = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (m - g) ^ 2 * c) ^ 0.5)) / (d * (m - g))
+
+If vvadpo > vvcdpo Then yv = (8.91 * 10 ^ -5 * d ^ 0.8 * v ^ 1.8 * b ^ 0.2 * (n - l - j)) / ((m - g) ^ 3 * (m + g) ^ 1.8)
+If vvadpo < vvcdpo Then yv = (((n - l - j) * b * vvadpo) / (60000 * (m - g) ^ 2)) + (((n - l - j) * c) / (225 * (m - g)))
+
+uv = xv + yv
+
+
+vvadca = (24.5 * v) / (m ^ 2 - i ^ 2)
+vvcdca = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (m - i) ^ 2 * c) ^ 0.5)) / (d * (m - i))
+
+If vvadca > vvcdca Then tv = (8.91 * 10 ^ -5 * d ^ 0.8 * v ^ 1.8 * b ^ 0.2 * j) / ((m - i) ^ 3 * (m + i) ^ 1.8)
+If vvadca < vvcdca Then tv = ((j * b * vvadca) / (60000 * (m - i) ^ 2)) + ((j * c) / (225 * (m - i)))
+
+vv = rv + sv + uv + tv + wv
+vhsi = (vv * v) / (1714 * 3.14 * (m ^ 2))
+
+
+''Flow rate +100 GPM
+aa = e + 100
+
+
+waa = Val(TextBox29.Value) * d ^ 0.8 * aa ^ 1.8 * b ^ 0.2
+
+
+aavadp = (24.5 * aa) / (F ^ 2)
+aavcdp = ((97 * b) + 97 * ((b ^ 2 + 8.2 * d * F ^ 2 * c) ^ 0.5)) / (d * F)
+ 
+If aavadp > aavcdp Then raa = (8.91 * 10 ^ -5 * d ^ 0.8 * aa ^ 1.8 * b ^ 0.2 * (n - j)) / (F ^ 4.8)
+If aavadp < aavcdp Then raa = (((n - j) * b * aavadp) / (90000 * F ^ 2)) + (((n - j) * c) / (225 * F))
+
+
+aavadc = (24.5 * aa) / (h ^ 2)
+aavcdc = ((97 * b) + 97 * ((b ^ 2 + 8.2 * d * h ^ 2 * c) ^ 0.5)) / (d * h)
+
+If aavadc > aavcdc Then saa = (8.91 * 10 ^ -5 * d ^ 0.8 * aa ^ 1.8 * b ^ 0.2 * j) / (h ^ 4.8)
+If aavadc < aavcdc Then saa = ((j * b * aavadc) / (90000 * h ^ 2)) + ((j * c) / (225 * h))
+
+
+aavadpa = (24.5 * aa) / (k ^ 2 - g ^ 2)
+aavcdpa = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (k - g) ^ 2 * c) ^ 0.5)) / (d * (k - g))
+
+If aavadpa > aavcdpa Then xaa = (8.91 * 10 ^ -5 * d ^ 0.8 * aa ^ 1.8 * b ^ 0.2 * l) / ((k - g) ^ 3 * (k + g) ^ 1.8)
+If aavadpa < aavcdpa Then xaa = ((l * b * aavadpa) / (60000 * (k - g) ^ 2)) + ((l * c) / (225 * (k - g)))
+
+aavadpo = (24.5 * aa) / (m ^ 2 - g ^ 2)
+aavcdpo = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (m - g) ^ 2 * c) ^ 0.5)) / (d * (m - g))
+
+If aavadpo > aavcdpo Then yaa = (8.91 * 10 ^ -5 * d ^ 0.8 * aa ^ 1.8 * b ^ 0.2 * (n - l - j)) / ((m - g) ^ 3 * (m + g) ^ 1.8)
+If aavadpo < aavcdpo Then yaa = (((n - l - j) * b * aavadpo) / (60000 * (m - g) ^ 2)) + (((n - l - j) * c) / (225 * (m - g)))
+
+uaa = xaa + yaa
+
+
+aavadca = (24.5 * aa) / (m ^ 2 - i ^ 2)
+aavcdca = ((97 * b) + 97 * ((b ^ 2 + 6.2 * d * (m - i) ^ 2 * c) ^ 0.5)) / (d * (m - i))
+
+If aavadca > aavcdca Then taa = (8.91 * 10 ^ -5 * d ^ 0.8 * aa ^ 1.8 * b ^ 0.2 * j) / ((m - i) ^ 3 * (m + i) ^ 1.8)
+If aavadca < aavcdca Then taa = ((j * b * aavadca) / (60000 * (m - i) ^ 2)) + ((j * c) / (225 * (m - i)))
+
+aaa = raa + saa + uaa + taa + waa
+aahsi = (aaa * aa) / (1714 * 3.14 * (m ^ 2))
+
+Sheet1.Range("A4").Value = P
+Sheet1.Range("B4").Value = phsi
+
+Sheet1.Range("A5").Value = q
+Sheet1.Range("B5").Value = qhsi
+
+Sheet1.Range("A6").Value = e
+Sheet1.Range("B6").Value = Val(TextBox31.Value)
+
+Sheet1.Range("A7").Value = v
+Sheet1.Range("B7").Value = vhsi
+
+Sheet1.Range("A8").Value = aa
+Sheet1.Range("B8").Value = aahsi
+
+End Sub
+
+Private Sub CommandButton2_Click()
+
+''assigning variables to the textboxes
+A = Val(TextBox1.Value)
+b = Val(TextBox2.Value)
+c = Val(TextBox3.Value)
+d = Val(TextBox4.Value)
+e = Val(TextBox5.Value)
+F = Val(TextBox6.Value)
+g = Val(TextBox7.Value)
+h = Val(TextBox8.Value)
+i = Val(TextBox9.Value)
+j = Val(TextBox10.Value)
+k = Val(TextBox11.Value)
+l = Val(TextBox12.Value)
+m = Val(TextBox13.Value)
+n = Val(TextBox14.Value)
+o = Val(TextBox15.Value)
+bb = Val(TextBox33.Value)
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Theta600 & Theta 300
+ts = 2 * b + c
+TextBox27.Value = ts
+tt = b + c
+TextBox28.Value = tt
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+na = 3.32 * Log(ts / tt) / Log(10)
+
+TextBox25.Value = na
+ka = tt / ((511) ^ na)
+TextBox26.Value = ka
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+
+''P1
+
+w = Val(TextBox29.Value) * d ^ 0.8 * e ^ 1.8 * b ^ 0.2
+TextBox16.Value = w
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''P2
+vadp = (24.5 * e) / (F ^ 2)
+vcdp = (((5.82 * 10 ^ 4 * ka) / (d)) ^ (1 / (2 - na))) * (((1.6 * (3 * na + 1)) / (F * 4 * na)) ^ (na / (1 - na)))
+
+If vadp > vcdp Then R = (8.91 * 10 ^ -5 * d ^ 0.8 * e ^ 1.8 * b ^ 0.2 * (n - j)) / (F ^ 4.8)
+If vadp < vcdp Then R = ((ka * (n - j)) / (300 * F)) * ((1.6 * vadp * (3 * na + 1)) / (F * 4 * na)) ^ na
+
+TextBox17.Value = R
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''P3
+vadc = (24.5 * e) / (h ^ 2)
+vcdc = (((5.82 * 10 ^ 4 * ka) / (d)) ^ (1 / (2 - na))) * ((1.6 * (3 * na + 1)) / (h * 4 * na)) ^ (na / (1 - na))
+
+If vadc > vcdc Then s = (8.91 * 10 ^ -5 * d ^ 0.8 * e ^ 1.8 * b ^ 0.2 * j) / (h ^ 4.8)
+If vadc < vcdc Then s = ((ka * j) / (300 * h)) * ((1.6 * vadc * (3 * na + 1)) / (h * 4 * na)) ^ na
+
+TextBox18.Value = s
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''P4
+vadpa = (24.5 * e) / (k ^ 2 - g ^ 2)
+vcdpa = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((k - g) * 3 * na)) ^ (na / (1 - na))
+
+If vadpa > vcdpa Then X = (8.91 * 10 ^ -5 * d ^ 0.8 * e ^ 1.8 * b ^ 0.2 * l) / ((k - g) ^ 3 * (k + g) ^ 1.8)
+If vadpa < vcdpa Then X = ((ka * l) / (300 * (k - g))) * ((2.4 * vadpa * (2 * na + 1)) / ((k - g) * 3 * na)) ^ na
+
+vadpo = (24.5 * e) / (m ^ 2 - g ^ 2)
+vcdco = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((m - g) * 3 * na)) ^ (na / (1 - na))
+
+If vadpo > vcdpo Then Y = (8.91 * 10 ^ -5 * d ^ 0.8 * e ^ 1.8 * b ^ 0.2 * (n - l - j)) / ((m - g) ^ 3 * (m + g) ^ 1.8)
+If vadpo < vcdpo Then Y = ((ka * (n - l - j)) / (300 * (m - g))) * ((2.4 * vadpo * (2 * na + 1)) / ((m - g) * 3 * na)) ^ na
+
+U = X + Y
+TextBox19.Value = U
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''P5
+vadca = (24.5 * e) / (m ^ 2 - i ^ 2)
+vcdca = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((m - i) * 3 * na)) ^ (na / (1 - na))
+
+If vadca > vcdca Then t = (8.91 * 10 ^ -5 * d ^ 0.8 * e ^ 1.8 * b ^ 0.2 * j) / ((m - i) ^ 3 * (m + i) ^ 1.8)
+If vadca < vcdca Then t = ((ka * j) / (300 * (m - i))) * ((2.4 * vadca * (2 * na + 1)) / ((m - i) * 3 * na)) ^ na
+
+TextBox20.Value = t
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Pbit
+TextBox21.Value = o - (Val(TextBox20.Value) + Val(TextBox19.Value) + Val(TextBox18.Value) + Val(TextBox17.Value) + Val(TextBox16.Value))
+Sheet12.Range("M77").Value = TextBox21.Value
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Nozzle Velocity
+TextBox22.Value = 33.36 * ((Val(TextBox21.Value) / d) ^ 0.5)
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Total Nozzle Area
+TextBox23.Value = 0.32 * (e / Val(TextBox22.Value))
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Nozzle Size
+TextBox24.Value = 32 * (((4 * Val(TextBox23.Value)) / (bb * 3.14)) ^ 0.5)
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Jet Impact Force
+TextBox30.Value = (e * d * Val(TextBox24.Value)) / 1930
+Sheet12.Range("M79").Value = TextBox30.Value
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''HSI
+TextBox31.Value = (Val(TextBox21.Value) * e) / (1714 * 3.14 * (m ^ 2))
+Sheet12.Range("M81").Value = TextBox31.Value
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+P = e - 100
+
+
+wp = Val(TextBox29.Value) * d ^ 0.8 * P ^ 1.8 * b ^ 0.2
+
+
+pvadp = (24.5 * P) / (F ^ 2)
+pvcdp = (((5.82 * 10 ^ 4 * ka) / (d)) ^ (1 / (2 - na))) * (((1.6 * (3 * na + 1)) / (F * 4 * na)) ^ (na / (1 - na)))
+
+If pvadp > pvcdp Then rp = (8.91 * 10 ^ -5 * d ^ 0.8 * P ^ 1.8 * b ^ 0.2 * (n - j)) / (F ^ 4.8)
+If pvadp < pvcdp Then rp = ((ka * (n - j)) / (300 * F)) * ((1.6 * pvadp * (3 * na + 1)) / (F * 4 * na)) ^ na
+
+
+pvadc = (24.5 * P) / (h ^ 2)
+pvcdc = (((5.82 * 10 ^ 4 * ka) / (d)) ^ (1 / (2 - na))) * ((1.6 * (3 * na + 1)) / (h * 4 * na)) ^ (na / (1 - na))
+
+If pvadc > pvcdc Then sp = (8.91 * 10 ^ -5 * d ^ 0.8 * P ^ 1.8 * b ^ 0.2 * j) / (h ^ 4.8)
+If pvadc < pvcdc Then sp = ((ka * j) / (300 * h)) * ((1.6 * pvadc * (3 * na + 1)) / (h * 4 * na)) ^ na
+
+pvadpa = (24.5 * P) / (k ^ 2 - g ^ 2)
+pvcdpa = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((k - g) * 3 * na)) ^ (na / (1 - na))
+
+If pvadpa > pvcdpa Then xp = (8.91 * 10 ^ -5 * d ^ 0.8 * P ^ 1.8 * b ^ 0.2 * l) / ((k - g) ^ 3 * (k + g) ^ 1.8)
+If pvadpa < pvcdpa Then xp = ((ka * l) / (300 * (k - g))) * ((2.4 * pvadpa * (2 * na + 1)) / ((k - g) * 3 * na)) ^ na
+
+pvadpo = (24.5 * P) / (m ^ 2 - g ^ 2)
+pvcdco = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((m - g) * 3 * na)) ^ (na / (1 - na))
+
+If pvadpo > pvcdpo Then yp = (8.91 * 10 ^ -5 * d ^ 0.8 * P ^ 1.8 * b ^ 0.2 * (n - l - j)) / ((m - g) ^ 3 * (m + g) ^ 1.8)
+If pvadpo < pvcdpo Then yp = ((ka * (n - l - j)) / (300 * (m - g))) * ((2.4 * pvadpo * (2 * na + 1)) / ((m - g) * 3 * na)) ^ na
+
+up = xp + yp
+
+pvadca = (24.5 * P) / (m ^ 2 - i ^ 2)
+pvcdca = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((m - i) * 3 * na)) ^ (na / (1 - na))
+
+If pvadca > pvcdca Then tp = (8.91 * 10 ^ -5 * d ^ 0.8 * P ^ 1.8 * b ^ 0.2 * j) / ((m - i) ^ 3 * (m + i) ^ 1.8)
+If pvadca < pvcdca Then tp = ((ka * j) / (300 * (m - i))) * ((2.4 * pvadca * (2 * na + 1)) / ((m - i) * 3 * na)) ^ na
+
+pp = rp + sp + up + tp + wp
+phsi = (pp * P) / (1714 * 3.14 * (m ^ 2))
+
+
+q = e - 50
+
+
+wq = Val(TextBox29.Value) * d ^ 0.8 * q ^ 1.8 * b ^ 0.2
+
+
+qvadp = (24.5 * q) / (F ^ 2)
+qvcdp = (((5.82 * 10 ^ 4 * ka) / (d)) ^ (1 / (2 - na))) * (((1.6 * (3 * na + 1)) / (F * 4 * na)) ^ (na / (1 - na)))
+
+If qvadp > qvcdp Then rq = (8.91 * 10 ^ -5 * d ^ 0.8 * q ^ 1.8 * b ^ 0.2 * (n - j)) / (F ^ 4.8)
+If qvadp < qvcdp Then rq = ((ka * (n - j)) / (300 * F)) * ((1.6 * qvadp * (3 * na + 1)) / (F * 4 * na)) ^ na
+
+
+qvadc = (24.5 * q) / (h ^ 2)
+qvcdc = (((5.82 * 10 ^ 4 * ka) / (d)) ^ (1 / (2 - na))) * ((1.6 * (3 * na + 1)) / (h * 4 * na)) ^ (na / (1 - na))
+
+If qvadc > qvcdc Then sq = (8.91 * 10 ^ -5 * d ^ 0.8 * q ^ 1.8 * b ^ 0.2 * j) / (h ^ 4.8)
+If qvadc < qvcdc Then sq = ((ka * j) / (300 * h)) * ((1.6 * qvadc * (3 * na + 1)) / (h * 4 * na)) ^ na
+
+qvadpa = (24.5 * q) / (k ^ 2 - g ^ 2)
+qvcdpa = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((k - g) * 3 * na)) ^ (na / (1 - na))
+
+If qvadpa > qvcdpa Then xq = (8.91 * 10 ^ -5 * d ^ 0.8 * q ^ 1.8 * b ^ 0.2 * l) / ((k - g) ^ 3 * (k + g) ^ 1.8)
+If qvadpa < qvcdpa Then xq = ((ka * l) / (300 * (k - g))) * ((2.4 * qvadpa * (2 * na + 1)) / ((k - g) * 3 * na)) ^ na
+
+qvadpo = (24.5 * q) / (m ^ 2 - g ^ 2)
+qvcdco = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((m - g) * 3 * na)) ^ (na / (1 - na))
+
+If qvadpo > qvcdpo Then yq = (8.91 * 10 ^ -5 * d ^ 0.8 * q ^ 1.8 * b ^ 0.2 * (n - l - j)) / ((m - g) ^ 3 * (m + g) ^ 1.8)
+If qvadpo < qvcdpo Then yq = ((ka * (n - l - j)) / (300 * (m - g))) * ((2.4 * qvadpo * (2 * na + 1)) / ((m - g) * 3 * na)) ^ na
+
+uq = xq + yq
+
+qvadca = (24.5 * q) / (m ^ 2 - i ^ 2)
+qvcdca = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((m - i) * 3 * na)) ^ (na / (1 - na))
+
+If qvadca > qvcdca Then tq = (8.91 * 10 ^ -5 * d ^ 0.8 * q ^ 1.8 * b ^ 0.2 * j) / ((m - i) ^ 3 * (m + i) ^ 1.8)
+If qvadca < qvcdca Then tq = ((ka * j) / (300 * (m - i))) * ((2.4 * qvadca * (2 * na + 1)) / ((m - i) * 3 * na)) ^ na
+
+qq = rq + sq + uq + tq + wq
+qhsi = (qq * q) / (1714 * 3.14 * (m ^ 2))
+
+
+v = e + 50
+
+
+wv = Val(TextBox29.Value) * d ^ 0.8 * v ^ 1.8 * b ^ 0.2
+
+
+vvadp = (24.5 * v) / (F ^ 2)
+vvcdp = (((5.82 * 10 ^ 4 * ka) / (d)) ^ (1 / (2 - na))) * (((1.6 * (3 * na + 1)) / (F * 4 * na)) ^ (na / (1 - na)))
+
+If vvadp > vvcdp Then rv = (8.91 * 10 ^ -5 * d ^ 0.8 * v ^ 1.8 * b ^ 0.2 * (n - j)) / (F ^ 4.8)
+If vvadp < vvcdp Then rv = ((ka * (n - j)) / (300 * F)) * ((1.6 * vvadp * (3 * na + 1)) / (F * 4 * na)) ^ na
+
+
+vvadc = (24.5 * v) / (h ^ 2)
+vvcdc = (((5.82 * 10 ^ 4 * ka) / (d)) ^ (1 / (2 - na))) * ((1.6 * (3 * na + 1)) / (h * 4 * na)) ^ (na / (1 - na))
+
+If vvadc > vvcdc Then sv = (8.91 * 10 ^ -5 * d ^ 0.8 * v ^ 1.8 * b ^ 0.2 * j) / (h ^ 4.8)
+If vvadc < vvcdc Then sv = ((ka * j) / (300 * h)) * ((1.6 * vvadc * (3 * na + 1)) / (h * 4 * na)) ^ na
+
+vvadpa = (24.5 * v) / (k ^ 2 - g ^ 2)
+vvcdpa = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((k - g) * 3 * na)) ^ (na / (1 - na))
+
+If vvadpa > vvcdpa Then xv = (8.91 * 10 ^ -5 * d ^ 0.8 * v ^ 1.8 * b ^ 0.2 * l) / ((k - g) ^ 3 * (k + g) ^ 1.8)
+If vvadpa < vvcdpa Then xv = ((ka * l) / (300 * (k - g))) * ((2.4 * vvadpa * (2 * na + 1)) / ((k - g) * 3 * na)) ^ na
+
+vvadpo = (24.5 * v) / (m ^ 2 - g ^ 2)
+vvcdco = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((m - g) * 3 * na)) ^ (na / (1 - na))
+
+If vvadpo > vvcdpo Then yv = (8.91 * 10 ^ -5 * d ^ 0.8 * v ^ 1.8 * b ^ 0.2 * (n - l - j)) / ((m - g) ^ 3 * (m + g) ^ 1.8)
+If vvadpo < vvcdpo Then yv = ((ka * (n - l - j)) / (300 * (m - g))) * ((2.4 * vvadpo * (2 * na + 1)) / ((m - g) * 3 * na)) ^ na
+
+uv = xv + yv
+
+vvadca = (24.5 * v) / (m ^ 2 - i ^ 2)
+vvcdca = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((m - i) * 3 * na)) ^ (na / (1 - na))
+
+If vvadca > vvcdca Then tv = (8.91 * 10 ^ -5 * d ^ 0.8 * v ^ 1.8 * b ^ 0.2 * j) / ((m - i) ^ 3 * (m + i) ^ 1.8)
+If vvadca < vvcdca Then tv = ((ka * j) / (300 * (m - i))) * ((2.4 * vvadca * (2 * na + 1)) / ((m - i) * 3 * na)) ^ na
+
+vv = rv + sv + uv + tv + wv
+vhsi = (vv * v) / (1714 * 3.14 * (m ^ 2))
+
+
+aa = e + 100
+
+
+waa = Val(TextBox29.Value) * d ^ 0.8 * aa ^ 1.8 * b ^ 0.2
+
+
+aavadp = (24.5 * aa) / (F ^ 2)
+aavcdp = (((5.82 * 10 ^ 4 * ka) / (d)) ^ (1 / (2 - na))) * (((1.6 * (3 * na + 1)) / (F * 4 * na)) ^ (na / (1 - na)))
+
+If aavadp > aavcdp Then raa = (8.91 * 10 ^ -5 * d ^ 0.8 * aa ^ 1.8 * b ^ 0.2 * (n - j)) / (F ^ 4.8)
+If aavadp < aavcdp Then raa = ((ka * (n - j)) / (300 * F)) * ((1.6 * aavadp * (3 * na + 1)) / (F * 4 * na)) ^ na
+
+
+aavadc = (24.5 * aa) / (h ^ 2)
+aavcdc = (((5.82 * 10 ^ 4 * ka) / (d)) ^ (1 / (2 - na))) * ((1.6 * (3 * na + 1)) / (h * 4 * na)) ^ (na / (1 - na))
+
+If aavadc > aavcdc Then saa = (8.91 * 10 ^ -5 * d ^ 0.8 * aa ^ 1.8 * b ^ 0.2 * j) / (h ^ 4.8)
+If aavadc < aavcdc Then saa = ((ka * j) / (300 * h)) * ((1.6 * aavadc * (3 * na + 1)) / (h * 4 * na)) ^ na
+
+aavadpa = (24.5 * aa) / (k ^ 2 - g ^ 2)
+aavcdpa = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((k - g) * 3 * na)) ^ (na / (1 - na))
+
+If aavadpa > aavcdpa Then xaa = (8.91 * 10 ^ -5 * d ^ 0.8 * aa ^ 1.8 * b ^ 0.2 * l) / ((k - g) ^ 3 * (k + g) ^ 1.8)
+If aavadpa < aavcdpa Then xaa = ((ka * l) / (300 * (k - g))) * ((2.4 * aavadpa * (2 * na + 1)) / ((k - g) * 3 * na)) ^ na
+
+aavadpo = (24.5 * aa) / (m ^ 2 - g ^ 2)
+aavcdco = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((m - g) * 3 * na)) ^ (na / (1 - na))
+
+If aavadpo > aavcdpo Then yaa = (8.91 * 10 ^ -5 * d ^ 0.8 * aa ^ 1.8 * b ^ 0.2 * (n - l - j)) / ((m - g) ^ 3 * (m + g) ^ 1.8)
+If aavadpo < aavcdpo Then yaa = ((ka * (n - l - j)) / (300 * (m - g))) * ((2.4 * aavadpo * (2 * na + 1)) / ((m - g) * 3 * na)) ^ na
+
+uaa = xaa + yaa
+
+aavadca = (24.5 * aa) / (m ^ 2 - i ^ 2)
+aavcdca = ((3.8787 * 10 ^ 4 * ka) / d) ^ (1 / (2 - na)) * ((2.4 * (2 * na + 1)) / ((m - i) * 3 * na)) ^ (na / (1 - na))
+
+If aavadca > aavcdca Then taa = (8.91 * 10 ^ -5 * d ^ 0.8 * aa ^ 1.8 * b ^ 0.2 * j) / ((m - i) ^ 3 * (m + i) ^ 1.8)
+If aavadca < aavcdca Then taa = ((ka * j) / (300 * (m - i))) * ((2.4 * aavadca * (2 * na + 1)) / ((m - i) * 3 * na)) ^ na
+
+aaa = raa + saa + uaa + taa + waa
+aahsi = (aaa * aa) / (1714 * 3.14 * (m ^ 2))
+
+
+Sheet1.Range("A4").Value = P
+Sheet1.Range("C4").Value = phsi
+
+Sheet1.Range("A5").Value = q
+Sheet1.Range("C5").Value = qhsi
+
+Sheet1.Range("A6").Value = e
+Sheet1.Range("C6").Value = Val(TextBox31.Value)
+
+Sheet1.Range("A7").Value = v
+Sheet1.Range("C7").Value = vhsi
+
+Sheet1.Range("A8").Value = aa
+Sheet1.Range("C8").Value = aahsi
+
+End Sub
+
+Private Sub CommandButton3_Click()
+''assigning variables to the textboxes
+A = Val(TextBox1.Value)
+b = Val(TextBox2.Value)
+c = Val(TextBox3.Value)
+d = Val(TextBox4.Value)
+e = Val(TextBox5.Value)
+F = Val(TextBox6.Value)
+g = Val(TextBox7.Value)
+h = Val(TextBox8.Value)
+i = Val(TextBox9.Value)
+j = Val(TextBox10.Value)
+k = Val(TextBox11.Value)
+l = Val(TextBox12.Value)
+m = Val(TextBox13.Value)
+n = Val(TextBox14.Value)
+o = Val(TextBox15.Value)
+tn = Val(TextBox32.Value)
+bb = Val(TextBox33.Value)
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Theta600 & Theta 300
+ts = 2 * b + c
+TextBox27.Value = ts
+tt = b + c
+TextBox28.Value = tt
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+na = 3.32 * Log(ts / tt) / Log(10)
+
+TextBox25.Value = na
+ka = tt / ((511) ^ na)
+TextBox26.Value = ka
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''P1
+w = Val(TextBox29.Value) * d ^ 0.8 * e ^ 1.8 * b ^ 0.2
+TextBox16.Value = w
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Pressure Losses inside drill pipe P2
+
+vp = (24.5 * e) / (F ^ 2)
+cc = 1 - (((1 / (2 * na + 1) * tn)) / ((tn + ka * (((3 * na + 1) * e)) / (na * 3.14 * (F / 2) ^ 3)) ^ na))
+yy = ((Log(na) / Log(10) + 3.93) / 50)
+zz = ((1.75 - (Log(na) / Log(10))) / 7)
+nre = (((2 * (3 * na + 1)) / na) * ((d * vp ^ (2 - na)) * (F / 2) ^ na)) / ((tn * (F / 2 * vp) ^ na) + (ka * ((3 * na + 1) / (na * cc)) ^ na))
+
+fa = yy * (cc * nre) ^ -zz
+Nrec = ((4 * (3 * na + 1)) / (na * yy)) ^ (1 / (1 - zz))
+
+If nre < Nrec Then R = (4 * ka * (n - j) / (14400 * F)) * ((tn / ka) + (((3 * na + 1) / (na * cc)) * ((8 * e) / (3.14 * F ^ 3))) ^ na)
+If nre > Nrec Then R = (((fa * e ^ 2 * d) / (1421.22 * F ^ 5)) * (n - j))
+TextBox17.Value = R
+
+''Pressure Losses inside drill collar P3
+
+vc = (24.5 * e) / (h ^ 2)
+ccc = 1 - (((1 / (2 * na + 1) * tn)) / ((tn + ka * (((3 * na + 1) * e)) / (na * 3.14 * (h / 2) ^ 3)) ^ na))
+yy = ((Log(na) / Log(10) + 3.93) / 50)
+zz = ((1.75 - (Log(na) / Log(10))) / 7)
+Nredc = (((2 * (3 * na + 1)) / na) * ((d * vc ^ (2 - na)) * (h / 2) ^ na)) / ((tn * (h / 2 * vc) ^ na) + (ka * ((3 * na + 1) / (na * ccc)) ^ na))
+
+fac = yy * (ccc * Nredc) ^ -zz
+Nrecdc = ((4 * (3 * na + 1)) / (na * yy)) ^ (1 / (1 - zz))
+
+If Nredc < Nrecdc Then s = (4 * ka * j) / (14400 * h) * ((tn / ka) + (((3 * na + 1) / (na * ccc)) * ((8 * e) / (3.14 * h ^ 3))) ^ na)
+If Nredc > Nrecdc Then s = (((fac * e ^ 2 * d) / (1421.22 * h ^ 5)) * j)
+TextBox18.Value = s
+
+''Pressure Losses annulus P4
+
+''pipe & casing
+vacp = (24.5 * e) / (k ^ 2 - g ^ 2)
+cacp = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * e * (2 * na + 1)) / (na * 3.14 * ((k / 2) - (g / 2)) * ((k / 2) ^ 2 - (g / 2) ^ 2))) ^ na)))
+yy = ((Log(na) / Log(10) + 3.93) / 50)
+zz = ((1.75 - (Log(na) / Log(10))) / 7)
+Nrecp = ((4 * (2 * na + 1)) / na) * (((d * vacp ^ (2 - na)) * ((k - g) / 2) ^ na)) / (tn * ((k - g) / (2 * vacp)) ^ na + ka * (2 * (2 * na + 1) / (na * cacp)) ^ na)
+
+facp = yy * (cacp * Nrecp) ^ -zz
+Nrecpc = ((8 * (2 * na + 1)) / (na * yy)) ^ (1 / (1 - zz))
+
+If Nrecp < Nrecpc Then X = ((4 * ka * l) / (14400 * (k - g))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * cacp * (k - g))) * (e / (3.14 * (k ^ 2 - g ^ 2))) ^ na))
+If Nrecp > Nrecpc Then X = ((facp * e ^ 2 * d * l) / (1421.22 * (k - g) * (k ^ 2 - g ^ 2) ^ 2))
+
+''drillpipe and openhole
+vaop = (24.5 * e) / (m ^ 2 - g ^ 2)
+caop = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * e * (2 * na + 1)) / (na * 3.14 * ((m / 2) - (g / 2)) * ((m / 2) ^ 2 - (g / 2) ^ 2))) ^ na)))
+yy = ((Log(na) / Log(10) + 3.93) / 50)
+zz = ((1.75 - (Log(na) / Log(10))) / 7)
+Nreop = ((4 * (2 * na + 1)) / na) * (((d * vaop ^ (2 - na)) * ((m - g) / 2) ^ na)) / (tn * ((m - g) / (2 * vaop)) ^ na + ka * (2 * (2 * na + 1) / (na * caop)) ^ na)
+
+faop = yy * (caop * Nreop) ^ -zz
+Nreopc = ((8 * (2 * na + 1)) / (na * yy)) ^ (1 / (1 - zz))
+
+If Nreop < Nreopc Then Y = ((4 * ka * (n - l - j)) / (14400 * (m - g))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * caop * (m - g))) * (e / (3.14 * (m ^ 2 - g ^ 2))) ^ na))
+If Nreop > Nreopc Then Y = ((faop * e ^ 2 * d * (n - l - j)) / (1421.22 * (m - g) * (m ^ 2 - g ^ 2) ^ 2))
+
+U = X + Y
+TextBox18.Value = U
+
+''openhole and drillcollar
+vaoc = (24.5 * e) / (m ^ 2 - i ^ 2)
+caoc = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * e * (2 * na + 1)) / (na * 3.14 * ((m / 2) - (i / 2)) * ((m / 2) ^ 2 - (i / 2) ^ 2))) ^ na)))
+yy = ((Log(na) / Log(10) + 3.93) / 50)
+zz = ((1.75 - (Log(na) / Log(10))) / 7)
+Nreoc = ((4 * (2 * na + 1)) / na) * (((d * vaoc ^ (2 - na)) * ((m - i) / 2) ^ na)) / (tn * ((m - i) / (2 * vaoc)) ^ na + ka * (2 * (2 * na + 1) / (na * caoc)) ^ na)
+
+faoc = yy * (caoc * Nreoc) ^ -zz
+Nreocc = ((8 * (2 * na + 1)) / (na * yy)) ^ (1 / (1 - zz))
+
+If Nreoc < Nreocc Then t = ((4 * ka * j) / (14400 * (m - i))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * caop * (m - i))) * (e / (3.14 * (m ^ 2 - i ^ 2))) ^ na))
+If Nreoc > Nreocc Then t = ((faoc * e ^ 2 * d * j) / (1421.22 * (m - i) * (m ^ 2 - i ^ 2) ^ 2))
+TextBox20.Value = t
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Pbit
+TextBox21.Value = o - (Val(TextBox20.Value) + Val(TextBox19.Value) + Val(TextBox18.Value) + Val(TextBox17.Value) + Val(TextBox16.Value))
+Sheet12.Range("P77").Value = TextBox21.Value
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Nozzle Velocity
+TextBox22.Value = 33.36 * ((Val(TextBox21.Value) / d) ^ 0.5)
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Total Nozzle Area
+TextBox23.Value = 0.32 * (e / Val(TextBox22.Value))
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Nozzle Size
+TextBox24.Value = 32 * (((4 * Val(TextBox23.Value)) / (bb * 3.14)) ^ 0.5)
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''Jet Impact Force
+TextBox30.Value = (e * d * Val(TextBox24.Value)) / 1930
+Sheet12.Range("P79").Value = TextBox30.Value
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''HSI
+TextBox31.Value = (Val(TextBox21.Value) * e) / (1714 * 3.14 * (m ^ 2))
+Sheet12.Range("P81").Value = TextBox31.Value
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''flowrate 100 less than given flowrate
+''pP1
+
+P = e - 100
+wp = Val(TextBox29.Value) * d ^ 0.8 * P ^ 1.8 * b ^ 0.2
+
+''pP2
+
+vpp = (24.5 * P) / (F ^ 2)
+ccp = 1 - (((1 / (2 * na + 1) * tn)) / ((tn + ka * (((3 * na + 1) * P)) / (na * 3.14 * (F / 2) ^ 3)) ^ na))
+yyp = ((Log(na) / Log(10) + 3.93) / 50)
+zzp = ((1.75 - (Log(na) / Log(10))) / 7)
+Nrep = (((2 * (3 * na + 1)) / na) * ((d * vpp ^ (2 - na)) * (F / 2) ^ na)) / ((tn * (F / 2 * vpp) ^ na) + (ka * ((3 * na + 1) / (na * ccp)) ^ na))
+
+fap = yyp * (ccp * Nrep) ^ -zzp
+Nrecp = ((4 * (3 * na + 1)) / (na * yyp)) ^ (1 / (1 - zzp))
+
+If Nrep < Nrecp Then rp = (4 * ka * (n - j) / (14400 * F)) * ((tn / ka) + (((3 * na + 1) / (na * ccp)) * ((8 * P) / (3.14 * F ^ 3))) ^ na)
+If Nrep > Nrecp Then rp = (((fap * P ^ 2 * d) / (1421.22 * F ^ 5)) * (n - j))
+
+''pP3
+vcp = (24.5 * P) / (h ^ 2)
+cccp = 1 - (((1 / (2 * na + 1) * tn)) / ((tn + ka * (((3 * na + 1) * P)) / (na * 3.14 * (h / 2) ^ 3)) ^ na))
+yyp = ((Log(na) / Log(10) + 3.93) / 50)
+zzp = ((1.75 - (Log(na) / Log(10))) / 7)
+Nredcp = (((2 * (3 * na + 1)) / na) * ((d * vcp ^ (2 - na)) * (h / 2) ^ na)) / ((tn * (h / 2 * vcp) ^ na) + (ka * ((3 * na + 1) / (na * cccp)) ^ na))
+
+pfac = yyp * (cccp * Nredcp) ^ -zzp
+Nrecdcp = ((4 * (3 * na + 1)) / (na * yyp)) ^ (1 / (1 - zzp))
+
+If Nredcp < Nrecdcp Then sp = (4 * ka * j) / (14400 * h) * ((tn / ka) + (((3 * na + 1) / (na * cccp)) * ((8 * P) / (3.14 * h ^ 3))) ^ na)
+If Nredcp > Nrecdcp Then sp = (((pfac * P ^ 2 * d) / (1421.22 * h ^ 5)) * j)
+
+''pP4
+''pP4(1)
+vacpp = (24.5 * P) / (k ^ 2 - g ^ 2)
+cacpp = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * P * (2 * na + 1)) / (na * 3.14 * ((k / 2) - (g / 2)) * ((k / 2) ^ 2 - (g / 2) ^ 2))) ^ na)))
+yyp = ((Log(na) / Log(10) + 3.93) / 50)
+zzp = ((1.75 - (Log(na) / Log(10))) / 7)
+Nrecpp = ((4 * (2 * na + 1)) / na) * (((d * vacpp ^ (2 - na)) * ((k - g) / 2) ^ na)) / (tn * ((k - g) / (2 * vacpp)) ^ na + ka * (2 * (2 * na + 1) / (na * cacpp)) ^ na)
+
+facpp = yyp * (cacpp * Nrecpp) ^ -zzp
+Nrecpcp = ((8 * (2 * na + 1)) / (na * yyp)) ^ (1 / (1 - zzp))
+
+If Nrecpp < Nrecpcp Then xp = ((4 * ka * l) / (14400 * (k - g))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * cacpp * (k - g))) * (P / (3.14 * (k ^ 2 - g ^ 2))) ^ na))
+If Nrecpp > Nrecpcp Then xp = ((facpp * P ^ 2 * d * l) / (1421.22 * (k - g) * (k ^ 2 - g ^ 2) ^ 2))
+
+''pP4(2)
+
+vaopp = (24.5 * P) / (m ^ 2 - g ^ 2)
+caopp = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * P * (2 * na + 1)) / (na * 3.14 * ((m / 2) - (g / 2)) * ((m / 2) ^ 2 - (g / 2) ^ 2))) ^ na)))
+yyp = ((Log(na) / Log(10) + 3.93) / 50)
+zzp = ((1.75 - (Log(na) / Log(10))) / 7)
+Nreopp = ((4 * (2 * na + 1)) / na) * (((d * vaopp ^ (2 - na)) * ((m - g) / 2) ^ na)) / (tn * ((m - g) / (2 * vaopp)) ^ na + ka * (2 * (2 * na + 1) / (na * caopp)) ^ na)
+
+faopp = yyp * (caopp * Nreopp) ^ -zzp
+Nreopcp = ((8 * (2 * na + 1)) / (na * yyp)) ^ (1 / (1 - zzp))
+
+If Nreopp < Nreopcp Then yp = ((4 * ka * (n - l - j)) / (14400 * (m - g))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * caopp * (m - g))) * (P / (3.14 * (m ^ 2 - g ^ 2))) ^ na))
+If Nreopp > Nreopcp Then yp = ((faopp * P ^ 2 * d * (n - l - j)) / (1421.22 * (m - g) * (m ^ 2 - g ^ 2) ^ 2))
+
+up = xp + yp
+
+''pP5
+vaocp = (24.5 * P) / (m ^ 2 - i ^ 2)
+caocp = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * P * (2 * na + 1)) / (na * 3.14 * ((m / 2) - (i / 2)) * ((m / 2) ^ 2 - (i / 2) ^ 2))) ^ na)))
+yyp = ((Log(na) / Log(10) + 3.93) / 50)
+zzp = ((1.75 - (Log(na) / Log(10))) / 7)
+Nreocp = ((4 * (2 * na + 1)) / na) * (((d * vaocp ^ (2 - na)) * ((m - i) / 2) ^ na)) / (tn * ((m - i) / (2 * vaocp)) ^ na + ka * (2 * (2 * na + 1) / (na * caocp)) ^ na)
+
+faocp = yyp * (caocp * Nreocp) ^ -zzp
+Nreoccp = ((8 * (2 * na + 1)) / (na * yyp)) ^ (1 / (1 - zzp))
+
+If Nreocp < Nreoccp Then tp = ((4 * ka * j) / (14400 * (m - i))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * caopp * (m - i))) * (P / (3.14 * (m ^ 2 - i ^ 2))) ^ na))
+If Nreocp > Nreoccp Then tp = ((faocp * P ^ 2 * d * j) / (1421.22 * (m - i) * (m ^ 2 - i ^ 2) ^ 2))
+
+pp = rp + sp + up + tp + wp
+phsi = (pp * P) / (1714 * 3.14 * (m ^ 2))
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''flowrate 50 less than given flowrate
+''qP1
+
+q = e - 50
+wq = Val(TextBox29.Value) * d ^ 0.8 * q ^ 1.8 * b ^ 0.2
+
+''qP2
+
+vpq = (24.5 * q) / (F ^ 2)
+ccq = 1 - (((1 / (2 * na + 1) * tn)) / ((tn + ka * (((3 * na + 1) * q)) / (na * 3.14 * (F / 2) ^ 3)) ^ na))
+yyq = ((Log(na) / Log(10) + 3.93) / 50)
+zzq = ((1.75 - (Log(na) / Log(10))) / 7)
+Nreq = (((2 * (3 * na + 1)) / na) * ((d * vpq ^ (2 - na)) * (F / 2) ^ na)) / ((tn * (F / 2 * vpq) ^ na) + (ka * ((3 * na + 1) / (na * ccq)) ^ na))
+
+faq = yyq * (ccq * Nreq) ^ -zzq
+Nrecq = ((4 * (3 * na + 1)) / (na * yyq)) ^ (1 / (1 - zzq))
+
+If Nreq < Nrecq Then rq = (4 * ka * (n - j) / (14400 * F)) * ((tn / ka) + (((3 * na + 1) / (na * ccq)) * ((8 * q) / (3.14 * F ^ 3))) ^ na)
+If Nreq > Nrecq Then rq = (((faq * q ^ 2 * d) / (1421.22 * F ^ 5)) * (n - j))
+
+''qP3
+vcq = (24.5 * q) / (h ^ 2)
+cccq = 1 - (((1 / (2 * na + 1) * tn)) / ((tn + ka * (((3 * na + 1) * q)) / (na * 3.14 * (h / 2) ^ 3)) ^ na))
+yyq = ((Log(na) / Log(10) + 3.93) / 50)
+zzq = ((1.75 - (Log(na) / Log(10))) / 7)
+Nredcq = (((2 * (3 * na + 1)) / na) * ((d * vcq ^ (2 - na)) * (h / 2) ^ na)) / ((tn * (h / 2 * vcq) ^ na) + (ka * ((3 * na + 1) / (na * cccq)) ^ na))
+
+qfac = yyq * (cccq * Nredcq) ^ -zzq
+Nrecdcq = ((4 * (3 * na + 1)) / (na * yyq)) ^ (1 / (1 - zzq))
+
+If Nredcq < Nrecdcq Then sq = (4 * ka * j) / (14400 * h) * ((tn / ka) + (((3 * na + 1) / (na * cccq)) * ((8 * q) / (3.14 * h ^ 3))) ^ na)
+If Nredcq > Nrecdcq Then sq = (((qfac * q ^ 2 * d) / (1421.22 * h ^ 5)) * j)
+
+''qP4
+''qP4(1)
+vacpq = (24.5 * q) / (k ^ 2 - g ^ 2)
+cacpq = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * q * (2 * na + 1)) / (na * 3.14 * ((k / 2) - (g / 2)) * ((k / 2) ^ 2 - (g / 2) ^ 2))) ^ na)))
+yyq = ((Log(na) / Log(10) + 3.93) / 50)
+zzq = ((1.75 - (Log(na) / Log(10))) / 7)
+Nrecpq = ((4 * (2 * na + 1)) / na) * (((d * vacpq ^ (2 - na)) * ((k - g) / 2) ^ na)) / (tn * ((k - g) / (2 * vacpq)) ^ na + ka * (2 * (2 * na + 1) / (na * cacpq)) ^ na)
+
+facpq = yyq * (cacpq * Nrecpq) ^ -zzq
+Nrecpcq = ((8 * (2 * na + 1)) / (na * yyq)) ^ (1 / (1 - zzq))
+
+If Nrecpq < Nrecpcq Then xq = ((4 * ka * l) / (14400 * (k - g))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * cacpq * (k - g))) * (q / (3.14 * (k ^ 2 - g ^ 2))) ^ na))
+If Nrecpq > Nrecpcq Then xq = ((facpq * q ^ 2 * d * l) / (1421.22 * (k - g) * (k ^ 2 - g ^ 2) ^ 2))
+
+''qP4(2)
+
+vaopq = (24.5 * q) / (m ^ 2 - g ^ 2)
+caopq = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * q * (2 * na + 1)) / (na * 3.14 * ((m / 2) - (g / 2)) * ((m / 2) ^ 2 - (g / 2) ^ 2))) ^ na)))
+yyq = ((Log(na) / Log(10) + 3.93) / 50)
+zzq = ((1.75 - (Log(na) / Log(10))) / 7)
+Nreopq = ((4 * (2 * na + 1)) / na) * (((d * vaopq ^ (2 - na)) * ((m - g) / 2) ^ na)) / (tn * ((m - g) / (2 * vaopq)) ^ na + ka * (2 * (2 * na + 1) / (na * caopq)) ^ na)
+
+faopq = yyq * (caopq * Nreopq) ^ -zzq
+Nreopcq = ((8 * (2 * na + 1)) / (na * yyq)) ^ (1 / (1 - zzq))
+
+If Nreopq < Nreopcq Then yq = ((4 * ka * (n - l - j)) / (14400 * (m - g))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * caopq * (m - g))) * (q / (3.14 * (m ^ 2 - g ^ 2))) ^ na))
+If Nreopq > Nreopcq Then yq = ((faopq * q ^ 2 * d * (n - l - j)) / (1421.22 * (m - g) * (m ^ 2 - g ^ 2) ^ 2))
+
+uq = xq + yq
+
+''qP5
+vaocq = (24.5 * q) / (m ^ 2 - i ^ 2)
+caocq = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * q * (2 * na + 1)) / (na * 3.14 * ((m / 2) - (i / 2)) * ((m / 2) ^ 2 - (i / 2) ^ 2))) ^ na)))
+yyq = ((Log(na) / Log(10) + 3.93) / 50)
+zzq = ((1.75 - (Log(na) / Log(10))) / 7)
+Nreocq = ((4 * (2 * na + 1)) / na) * (((d * vaocq ^ (2 - na)) * ((m - i) / 2) ^ na)) / (tn * ((m - i) / (2 * vaocq)) ^ na + ka * (2 * (2 * na + 1) / (na * caocq)) ^ na)
+
+faocq = yyq * (caocq * Nreocq) ^ -zzq
+Nreoccq = ((8 * (2 * na + 1)) / (na * yyq)) ^ (1 / (1 - zzq))
+
+If Nreocq < Nreoccq Then tq = ((4 * ka * j) / (14400 * (m - i))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * caopq * (m - i))) * (q / (3.14 * (m ^ 2 - i ^ 2))) ^ na))
+If Nreocq > Nreoccq Then tq = ((faocq * q ^ 2 * d * j) / (1421.22 * (m - i) * (m ^ 2 - i ^ 2) ^ 2))
+
+qq = rq + sq + uq + tq + wq
+qhsi = (qq * q) / (1714 * 3.14 * (m ^ 2))
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''flowrate 50 more than given flowrate
+''vP1
+
+v = e + 50
+wv = Val(TextBox29.Value) * d ^ 0.8 * v ^ 1.8 * b ^ 0.2
+
+''vP2
+
+vpv = (24.5 * v) / (F ^ 2)
+ccv = 1 - (((1 / (2 * na + 1) * tn)) / ((tn + ka * (((3 * na + 1) * v)) / (na * 3.14 * (F / 2) ^ 3)) ^ na))
+yyv = ((Log(na) / Log(10) + 3.93) / 50)
+zzv = ((1.75 - (Log(na) / Log(10))) / 7)
+Nrev = (((2 * (3 * na + 1)) / na) * ((d * vpv ^ (2 - na)) * (F / 2) ^ na)) / ((tn * (F / 2 * vpv) ^ na) + (ka * ((3 * na + 1) / (na * ccv)) ^ na))
+
+fav = yyv * (ccv * Nrev) ^ -zzv
+Nrecv = ((4 * (3 * na + 1)) / (na * yyv)) ^ (1 / (1 - zzv))
+
+If Nrev < Nrecv Then rv = (4 * ka * (n - j) / (14400 * F)) * ((tn / ka) + (((3 * na + 1) / (na * ccv)) * ((8 * v) / (3.14 * F ^ 3))) ^ na)
+If Nrev > Nrecv Then rv = (((fav * v ^ 2 * d) / (1421.22 * F ^ 5)) * (n - j))
+
+''vP3
+vcv = (24.5 * v) / (h ^ 2)
+cccv = 1 - (((1 / (2 * na + 1) * tn)) / ((tn + ka * (((3 * na + 1) * v)) / (na * 3.14 * (h / 2) ^ 3)) ^ na))
+yyv = ((Log(na) / Log(10) + 3.93) / 50)
+zzv = ((1.75 - (Log(na) / Log(10))) / 7)
+Nredcv = (((2 * (3 * na + 1)) / na) * ((d * vcv ^ (2 - na)) * (h / 2) ^ na)) / ((tn * (h / 2 * vcv) ^ na) + (ka * ((3 * na + 1) / (na * cccv)) ^ na))
+
+vfac = yyv * (cccv * Nredcv) ^ -zzv
+Nrecdcv = ((4 * (3 * na + 1)) / (na * yyv)) ^ (1 / (1 - zzv))
+
+If Nredcv < Nrecdcv Then sv = (4 * ka * j) / (14400 * h) * ((tn / ka) + (((3 * na + 1) / (na * cccv)) * ((8 * v) / (3.14 * h ^ 3))) ^ na)
+If Nredcv > Nrecdcv Then sv = (((vfac * v ^ 2 * d) / (1421.22 * h ^ 5)) * j)
+
+''vP4
+''vP4(1)
+vacpv = (24.5 * v) / (k ^ 2 - g ^ 2)
+cacpv = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * v * (2 * na + 1)) / (na * 3.14 * ((k / 2) - (g / 2)) * ((k / 2) ^ 2 - (g / 2) ^ 2))) ^ na)))
+yyv = ((Log(na) / Log(10) + 3.93) / 50)
+zzv = ((1.75 - (Log(na) / Log(10))) / 7)
+Nrecpv = ((4 * (2 * na + 1)) / na) * (((d * vacpv ^ (2 - na)) * ((k - g) / 2) ^ na)) / (tn * ((k - g) / (2 * vacpv)) ^ na + ka * (2 * (2 * na + 1) / (na * cacpv)) ^ na)
+
+facpv = yyv * (cacpv * Nrecpv) ^ -zzv
+Nrecpcv = ((8 * (2 * na + 1)) / (na * yyv)) ^ (1 / (1 - zzv))
+
+If Nrecpv < Nrecpcv Then xv = ((4 * ka * l) / (14400 * (k - g))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * cacpv * (k - g))) * (v / (3.14 * (k ^ 2 - g ^ 2))) ^ na))
+If Nrecpv > Nrecpcv Then xv = ((facpv * v ^ 2 * d * l) / (1421.22 * (k - g) * (k ^ 2 - g ^ 2) ^ 2))
+
+''pP4(2)
+
+vaopv = (24.5 * v) / (m ^ 2 - g ^ 2)
+caopv = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * v * (2 * na + 1)) / (na * 3.14 * ((m / 2) - (g / 2)) * ((m / 2) ^ 2 - (g / 2) ^ 2))) ^ na)))
+yyv = ((Log(na) / Log(10) + 3.93) / 50)
+zzv = ((1.75 - (Log(na) / Log(10))) / 7)
+Nreopv = ((4 * (2 * na + 1)) / na) * (((d * vaopv ^ (2 - na)) * ((m - g) / 2) ^ na)) / (tn * ((m - g) / (2 * vaopv)) ^ na + ka * (2 * (2 * na + 1) / (na * caopv)) ^ na)
+
+faopv = yyv * (caopv * Nreopv) ^ -zzv
+Nreopcv = ((8 * (2 * na + 1)) / (na * yyv)) ^ (1 / (1 - zzv))
+
+If Nreopv < Nreopcv Then yv = ((4 * ka * (n - l - j)) / (14400 * (m - g))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * caopv * (m - g))) * (v / (3.14 * (m ^ 2 - g ^ 2))) ^ na))
+If Nreopv > Nreopcv Then yv = ((faopv * v ^ 2 * d * (n - l - j)) / (1421.22 * (m - g) * (m ^ 2 - g ^ 2) ^ 2))
+
+uv = xv + yv
+
+''pP5
+vaocv = (24.5 * v) / (m ^ 2 - i ^ 2)
+caocv = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * v * (2 * na + 1)) / (na * 3.14 * ((m / 2) - (i / 2)) * ((m / 2) ^ 2 - (i / 2) ^ 2))) ^ na)))
+yyv = ((Log(na) / Log(10) + 3.93) / 50)
+zzv = ((1.75 - (Log(na) / Log(10))) / 7)
+Nreocv = ((4 * (2 * na + 1)) / na) * (((d * vaocv ^ (2 - na)) * ((m - i) / 2) ^ na)) / (tn * ((m - i) / (2 * vaocv)) ^ na + ka * (2 * (2 * na + 1) / (na * caocv)) ^ na)
+
+faocv = yyv * (caocv * Nreocv) ^ -zzv
+Nreoccv = ((8 * (2 * na + 1)) / (na * yyv)) ^ (1 / (1 - zzv))
+
+If Nreocv < Nreoccv Then tv = ((4 * ka * j) / (14400 * (m - i))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * caopv * (m - i))) * (v / (3.14 * (m ^ 2 - i ^ 2))) ^ na))
+If Nreocv > Nreoccv Then tv = ((faocv * v ^ 2 * d * j) / (1421.22 * (m - i) * (m ^ 2 - i ^ 2) ^ 2))
+
+vv = rv + sv + uv + tv + wv
+vhsi = (vv * v) / (1714 * 3.14 * (m ^ 2))
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''flowrate 100 more than given flowrate
+''aaP1
+
+aa = e + 100
+wp = Val(TextBox29.Value) * d ^ 0.8 * aa ^ 1.8 * b ^ 0.2
+
+''aaP2
+
+vpaa = (24.5 * aa) / (F ^ 2)
+ccaa = 1 - (((1 / (2 * na + 1) * tn)) / ((tn + ka * (((3 * na + 1) * aa)) / (na * 3.14 * (F / 2) ^ 3)) ^ na))
+yyaa = ((Log(na) / Log(10) + 3.93) / 50)
+zzaa = ((1.75 - (Log(na) / Log(10))) / 7)
+Nreaa = (((2 * (3 * na + 1)) / na) * ((d * vpaa ^ (2 - na)) * (F / 2) ^ na)) / ((tn * (F / 2 * vpaa) ^ na) + (ka * ((3 * na + 1) / (na * ccaa)) ^ na))
+
+faaa = yyaa * (ccaa * Nreaa) ^ -zzaa
+Nrecaa = ((4 * (3 * na + 1)) / (na * yyaa)) ^ (1 / (1 - zzaa))
+
+If Nreaa < Nrecaa Then raa = (4 * ka * (n - j) / (14400 * F)) * ((tn / ka) + (((3 * na + 1) / (na * ccaa)) * ((8 * aa) / (3.14 * F ^ 3))) ^ na)
+If Nreaa > Nrecaa Then raa = (((faaa * aa ^ 2 * d) / (1421.22 * F ^ 5)) * (n - j))
+
+''aaP3
+vcaa = (24.5 * aa) / (h ^ 2)
+cccaa = 1 - (((1 / (2 * na + 1) * tn)) / ((tn + ka * (((3 * na + 1) * aa)) / (na * 3.14 * (h / 2) ^ 3)) ^ na))
+yyaa = ((Log(na) / Log(10) + 3.93) / 50)
+zzaa = ((1.75 - (Log(na) / Log(10))) / 7)
+Nredcaa = (((2 * (3 * na + 1)) / na) * ((d * vcaa ^ (2 - na)) * (h / 2) ^ na)) / ((tn * (h / 2 * vcaa) ^ na) + (ka * ((3 * na + 1) / (na * cccaa)) ^ na))
+
+aafac = yyaa * (cccaa * Nredcaa) ^ -zzaa
+Nrecdcaa = ((4 * (3 * na + 1)) / (na * yyaa)) ^ (1 / (1 - zzaa))
+
+If Nredcaa < Nrecdcaa Then saa = (4 * ka * j) / (14400 * h) * ((tn / ka) + (((3 * na + 1) / (na * cccaa)) * ((8 * aa) / (3.14 * h ^ 3))) ^ na)
+If Nredcaa > Nrecdcaa Then saa = (((aafac * aa ^ 2 * d) / (1421.22 * h ^ 5)) * j)
+
+''aaP4
+''aaP4(1)
+vacpaa = (24.5 * aa) / (k ^ 2 - g ^ 2)
+cacpaa = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * aa * (2 * na + 1)) / (na * 3.14 * ((k / 2) - (g / 2)) * ((k / 2) ^ 2 - (g / 2) ^ 2))) ^ na)))
+yyaa = ((Log(na) / Log(10) + 3.93) / 50)
+zzaa = ((1.75 - (Log(na) / Log(10))) / 7)
+Nrecpaa = ((4 * (2 * na + 1)) / na) * (((d * vacpaa ^ (2 - na)) * ((k - g) / 2) ^ na)) / (tn * ((k - g) / (2 * vacpaa)) ^ na + ka * (2 * (2 * na + 1) / (na * cacpaa)) ^ na)
+
+facpaa = yyaa * (cacpaa * Nrecpaa) ^ -zzaa
+Nrecpcaa = ((8 * (2 * na + 1)) / (na * yyaa)) ^ (1 / (1 - zzaa))
+
+If Nrecpaa < Nrecpcaa Then xaa = ((4 * ka * l) / (14400 * (k - g))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * cacpaa * (k - g))) * (aa / (3.14 * (k ^ 2 - g ^ 2))) ^ na))
+If Nrecpaa > Nrecpcaa Then xaa = ((facpaa * aa ^ 2 * d * l) / (1421.22 * (k - g) * (k ^ 2 - g ^ 2) ^ 2))
+
+''aaP4(2)
+
+vaopaa = (24.5 * aa) / (m ^ 2 - g ^ 2)
+caopaa = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * aa * (2 * na + 1)) / (na * 3.14 * ((m / 2) - (g / 2)) * ((m / 2) ^ 2 - (g / 2) ^ 2))) ^ na)))
+yyaa = ((Log(na) / Log(10) + 3.93) / 50)
+zzaa = ((1.75 - (Log(na) / Log(10))) / 7)
+Nreopaa = ((4 * (2 * na + 1)) / na) * (((d * vaopaa ^ (2 - na)) * ((m - g) / 2) ^ na)) / (tn * ((m - g) / (2 * vaopaa)) ^ na + ka * (2 * (2 * na + 1) / (na * caopaa)) ^ na)
+
+faopaa = yyaa * (caopaa * Nreopaa) ^ -zzaa
+Nreopcaa = ((8 * (2 * na + 1)) / (na * yyaa)) ^ (1 / (1 - zzaa))
+
+If Nreopaa < Nreopcaa Then yaa = ((4 * ka * (n - l - j)) / (14400 * (m - g))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * caopaa * (m - g))) * (aa / (3.14 * (m ^ 2 - g ^ 2))) ^ na))
+If Nreopaa > Nreopcaa Then yaa = ((faopaa * aa ^ 2 * d * (n - l - j)) / (1421.22 * (m - g) * (m ^ 2 - g ^ 2) ^ 2))
+
+uaa = xaa + yaa
+
+''aaP5
+vaocaa = (24.5 * aa) / (m ^ 2 - i ^ 2)
+caocaa = 1 - ((1 / (na + 1)) * ((tn) / (tn + (ka) * ((2 * aa * (2 * na + 1)) / (na * 3.14 * ((m / 2) - (i / 2)) * ((m / 2) ^ 2 - (i / 2) ^ 2))) ^ na)))
+yyaa = ((Log(na) / Log(10) + 3.93) / 50)
+zzaa = ((1.75 - (Log(na) / Log(10))) / 7)
+Nreocaa = ((4 * (2 * na + 1)) / na) * (((d * vaocaa ^ (2 - na)) * ((m - i) / 2) ^ na)) / (tn * ((m - i) / (2 * vaocaa)) ^ na + ka * (2 * (2 * na + 1) / (na * caocaa)) ^ na)
+
+faocaa = yyaa * (caocaa * Nreocaa) ^ -zzaa
+Nreoccaa = ((8 * (2 * na + 1)) / (na * yyaa)) ^ (1 / (1 - zzaa))
+
+If Nreocaa < Nreoccaa Then taa = ((4 * ka * j) / (14400 * (m - i))) * ((tn / ka) + (((16 * (2 * na + 1)) / (na * caopaa * (m - i))) * (aa / (3.14 * (m ^ 2 - i ^ 2))) ^ na))
+If Nreocaa > Nreoccaa Then taa = ((faocaa * aa ^ 2 * d * j) / (1421.22 * (m - i) * (m ^ 2 - i ^ 2) ^ 2))
+
+aaa = raa + saa + uaa + taa + waa
+aahsi = (aaa * aa) / (1714 * 3.14 * (m ^ 2))
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+Sheet1.Range("A4").Value = P
+Sheet1.Range("D4").Value = phsi
+
+Sheet1.Range("A5").Value = q
+Sheet1.Range("D5").Value = qhsi
+
+Sheet1.Range("A6").Value = e
+Sheet1.Range("D6").Value = Val(TextBox31.Value)
+
+Sheet1.Range("A7").Value = v
+Sheet1.Range("D7").Value = vhsi
+
+Sheet1.Range("A8").Value = aa
+Sheet1.Range("D8").Value = aahsi
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+End Sub
